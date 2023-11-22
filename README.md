@@ -1,4 +1,4 @@
-- [Deploy High Availability Kuberenetes Cluster Using Kubeadm on a Stack Control Plane](#deploy-high-availability-kuberenetes-cluster-using-kubeadm-on-a-stack-control-plane)
+- [Deploy High Availability Kubernetes Cluster Using Kubeadm on a Stack Control Plane](#deploy-high-availability-kuberenetes-cluster-using-kubeadm-on-a-stack-control-plane)
   - [Official Documentation](#official-documentation)
   - [Machine Preparation](#machine-preparation)
   - [Automatically prepare the machines using scripts](#automatically-prepare-the-machines-using-scripts)
@@ -19,7 +19,7 @@
     - [Adding nodes to the cluster](#adding-nodes-to-the-cluster)
     - [(Optional) Proxying API Server to localhost](#optional-proxying-api-server-to-localhost)
       
-# Deploy High Availability Kuberenetes Cluster Using Kubeadm on a Stack Control Plane
+# Deploy High Availability Kubernetes Cluster Using Kubeadm on a Stack Control Plane
 ## Official Documentation
 - Refer to the [official kubeadm documentation](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm) for detailed guidance.
 - Refer to the [official kubernetes documentation](https://kubernetes.io/docs/home/) for kubernetes resources.
