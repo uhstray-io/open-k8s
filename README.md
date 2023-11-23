@@ -1,4 +1,4 @@
-- [Deploy High Availability Kubernetes Cluster Using Kubeadm on a Stack Control Plane](#deploy-high-availability-kuberenetes-cluster-using-kubeadm-on-a-stack-control-plane)
+- [Deploy High Availability Kubernetes Cluster Using Kubeadm on a Stack Control Plane](#deploy-high-availability-kubernetes-cluster-using-kubeadm-on-a-stack-control-plane)
   - [Official Documentation](#official-documentation)
   - [Machine Preparation](#machine-preparation)
   - [Automatically prepare the machines using scripts](#automatically-prepare-the-machines-using-scripts)
@@ -13,7 +13,7 @@
   - [Creating High Availability Kubernetes Cluster on a Stack Control Plane](#creating-high-availability-kubernetes-cluster-on-a-stack-control-plane)
     - [Setup HA Load Balancer using keepalived and HAProxy](#setup-ha-load-balancer-using-keepalived-and-haproxy)
     - [Control-Plane Node Initialization](#control-plane-node-initialization)
-    - [Considerations about certifications, apiserver-advertise-addres, and ControlPlaneEndpoint](#considerations-about-certifications-apiserver-advertise-addres-and-controlplaneendpoint)
+      - [Considerations about certifications, apiserver-advertise-addres, and ControlPlaneEndpoint](#considerations-about-certifications-apiserver-advertise-addres-and-controlplaneendpoint)
     - [CNI Networking Setup](#cni-networking-setup)
       - [Network Design Considerations](#network-design-considerations)
     - [Adding nodes to the cluster](#adding-nodes-to-the-cluster)
@@ -101,7 +101,7 @@ curl -L "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL
 Download the latest version of kubeadm and kubelet binaries
 
 ```bash
-RELEASE="$(curl -sSL https://dl.k8s.io/release/stable.txt)"
+K8S_RELEASE="$(curl -sSL https://dl.k8s.io/release/stable.txt)"
 ARCH="amd64"
 RELEASE_VERSION="v0.16.2"
 
@@ -109,7 +109,7 @@ cd $DOWNLOAD_DIR
 sudo chmod +x {kubeadm,kubelet}
 sudo mkdir -p /etc/systemd/system/kubelet.service.d
 
-sudo curl -L --remote-name-all https://dl.k8s.io/release/${RELEASE}/bin/linux/${ARCH}/{kubeadm,kubelet}
+sudo curl -L --remote-name-all https://dl.k8s.io/release/${K8S_RELEASE}/bin/linux/${ARCH}/{kubeadm,kubelet}
 sudo curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSION}/cmd/krel/templates/latest/kubelet/kubelet.service" | sed "s:/usr/bin:${DOWNLOAD_DIR}:g" | sudo tee /etc/systemd/system/kubelet.service
 
 sudo curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSION}/cmd/krel/templates/latest/kubeadm/10-kubeadm.conf" | sed "s:/usr/bin:${DOWNLOAD_DIR}:g" | sudo tee /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
@@ -144,7 +144,7 @@ sudo systemctl enable --now kubelet
 - Set up an HA load balancer using [keepalived and HAProxy](https://github.com/kubernetes/kubeadm/blob/main/docs/ha-considerations.md#keepalived-and-haproxy).
 - Configure keepalived and haproxy to run as static pods.
 
-Refer to `/kubeadm`,`/kubeadm/control_a`, `/kubeadm/control_b`, and `/kubeadm/control_c/` for these files.
+Refer to `/kubeadm`,`/kubeadm/control_master`, `/kubeadm/control_backup`, and `/kubeadm/worker/` for these files.
 
 These files were built using these examples:
 
@@ -169,6 +169,8 @@ Assuming that in a new cluster port 6443 is used for the load-balanced API Serve
 sudo kubeadm init --control-plane-endpoint my.dns.name:6443 [additional arguments ...]
 ```
 
+Note: The kubeadm init flags `--config` and `--certificate-key` cannot be mixed, therefore if you want to use the kubeadm configuration you must add the certificateKey field in the appropriate config locations (under InitConfiguration and JoinConfiguration: controlPlane).
+
 We should see an output similar to:
 ```bash
 ...
@@ -189,7 +191,7 @@ Test your kubectl with to see if the cluster responds:
 kubectl get pod -n kube-system -w
 ```
 
-### Considerations about certifications, apiserver-advertise-addres, and ControlPlaneEndpoint
+#### Considerations about certifications, apiserver-advertise-addres, and ControlPlaneEndpoint
 
 - `--apiserver-advertise-address` can be used to set the advertise address for this particular control-plane node's API server
 - `--control-plane-endpoint=my.dns.name` can be used to set the shared endpoint for all control-plane nodes.
@@ -213,7 +215,7 @@ Caution: As stated in the command output, the certificate key gives access to cl
 ### CNI Networking Setup
 - Apply the chosen CNI plugin following the provided instructions.
 - Ensure the network plugin is compatible with your cluster's configuration.
-- To add a pod CIDR pass the flag `--pod-network-cidr`, or if you are using a kubeadm configuration file set the podSubnet field under the networking object of ClusterConfiguration.
+- To add a pod CIDR pass the flag `--pod-network-cidr`, or if you are using a kubeadm configuration file set the `podSubnet` field under the networking object of `ClusterConfiguration`.
 
 #### Network Design Considerations
 
@@ -234,8 +236,6 @@ You can install a Pod network add-on with the following command on the control-p
 ```bash
 kubectl apply -f <add-on.yaml>
 ```
-Note: The kubeadm init flags `--config` and `--certificate-key` cannot be mixed, therefore if you want to use the kubeadm configuration you must add the certificateKey field in the appropriate config locations (under InitConfiguration and JoinConfiguration: controlPlane).
-
 
 ### Adding nodes to the cluster
 - Add additional control-plane nodes and worker nodes using the `kubeadm join` command as described in the output of the `kubeadm init` command.
