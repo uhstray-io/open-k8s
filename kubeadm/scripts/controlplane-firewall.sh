@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Replace with your local network IP range
-LOCAL_NETWORK="192.168.1.0/24"
+LOCAL_NETWORK="192.168.x.x/24"
 
 # Allow SSH only from the local network
 sudo ufw allow from $LOCAL_NETWORK proto tcp to any port 22 
