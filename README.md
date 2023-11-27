@@ -22,6 +22,8 @@
     - [(Optional) Proxying API Server to localhost](#optional-proxying-api-server-to-localhost)
     - [Using Cilium and crictl as a command line tool](#using-cilium-and-crictl-as-a-command-line-tool)
     - [Configuring GPU Scheduling](#configuring-gpu-scheduling)
+   
+---
       
 # Deploy High Availability Kubernetes Cluster Using Kubeadm on a Stack Control Plane
 ## Official Documentation
@@ -315,7 +317,7 @@ sudo kubeadm join 192.168.x.xxx:6443 --token {token} --discovery-token-ca-cert-h
 
 ---
 
-### (Optional) Proxying API Server to localhost 
+## (Optional) Proxying API Server to localhost 
 If you want to connect to the API Server from outside the cluster you can use kubectl proxy:
 ```bash
 /etc/kubernetes/admin.conf .
@@ -327,11 +329,11 @@ You can now access the API Server locally at http://localhost:8001/api/v1
 
 ---
 
-### Using Cilium and crictl as a command line tool
+## Using Cilium and crictl as a command line tool
 
 ---
 
-### Configuring GPU Scheduling
+## Configuring GPU Scheduling
 
 https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/
 
