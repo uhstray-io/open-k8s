@@ -15,9 +15,13 @@
     - [Control-Plane Node Initialization](#control-plane-node-initialization)
       - [Considerations about certifications, apiserver-advertise-addres, and ControlPlaneEndpoint](#considerations-about-certifications-apiserver-advertise-addres-and-controlplaneendpoint)
     - [CNI Networking Setup](#cni-networking-setup)
+      - [Using Cilium for Cluster Networking](#using-cilium-for-cluster-networking)
+        - [Understanding Cilium components](#understanding-cilium-components)
       - [Network Design Considerations](#network-design-considerations)
     - [Adding nodes to the cluster](#adding-nodes-to-the-cluster)
     - [(Optional) Proxying API Server to localhost](#optional-proxying-api-server-to-localhost)
+    - [Using Cilium and crictl as a command line tool](#using-cilium-and-crictl-as-a-command-line-tool)
+    - [Configuring GPU Scheduling](#configuring-gpu-scheduling)
       
 # Deploy High Availability Kubernetes Cluster Using Kubeadm on a Stack Control Plane
 ## Official Documentation
@@ -30,6 +34,8 @@
 - Ensure all required [Kubernetes ports and protocols](https://kubernetes.io/docs/reference/networking/ports-and-protocols/) are open for both internal and external traffic.
 - Follow the [Kubernetes services protocols](https://kubernetes.io/docs/reference/networking/service-protocols/) for proper configuration.
 
+---
+
 ## Automatically prepare the machines using scripts
 Find Kubernetes preparation scripts in the [\scripts](\scripts) directory:
 - `controlplane-firewall.sh`
@@ -37,6 +43,8 @@ Find Kubernetes preparation scripts in the [\scripts](\scripts) directory:
 - `prepare-k8s.sh`
 
 Use can use these scripts and their variables to pre-configure your Ubuntu machines. Many of these scripts assume default ports and configurations for kubernetes.
+
+---
 
 ## Manually Prepare Machines
 ### Essential Installations
@@ -60,9 +68,10 @@ sudo mkdir -p "$DOWNLOAD_DIR"
 ```
 #### Setup Container Runtime Environments Kubernetes [using containerd...](https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd)
 
-- Set up container runtime environment with [containerd](https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd).
+- Set up container runtime environment with [containerd](https://github.com/containerd/containerd/blob/main/docs/getting-started.md)
 - Download and extract `containerd` using the provided bash script.
 - Configure systemd as the cgroup driver for containerd.
+- (Optional) Implement your own [containerd client](https://github.com/containerd/containerd/blob/main/docs/getting-started.md#implementing-your-own-containerd-client)
 
   Runtime	Path to Unix domain socket:
   * `containerd` |	`unix:///var/run/containerd/containerd.sock`
@@ -96,6 +105,8 @@ ARCH="amd64"
 curl -L "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz" | sudo tar -C $DOWNLOAD_DIR -xz
 ```
 
+---
+
 ### kubeadm: the command to bootstrap the cluster, kubelet: the component that runs on all of the machines in your cluster and does things like starting pods and containers
 
 Download the latest version of kubeadm and kubelet binaries
@@ -114,6 +125,9 @@ sudo curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_V
 
 sudo curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSION}/cmd/krel/templates/latest/kubeadm/10-kubeadm.conf" | sed "s:/usr/bin:${DOWNLOAD_DIR}:g" | sudo tee /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 ```
+
+---
+
 ### kubectl: the command line util to talk to your cluster.
 
 Download the latest version of kubectl
@@ -137,11 +151,12 @@ Enable and start kubelet
 sudo systemctl enable --now kubelet
 ```
 
+---
+
 ## Creating High Availability Kubernetes Cluster on a Stack Control Plane
 
 ### Setup HA Load Balancer using [keepalived and HAProxy](https://github.com/kubernetes/kubeadm/blob/main/docs/ha-considerations.md#keepalived-and-haproxy)
 
-- Set up an HA load balancer using [keepalived and HAProxy](https://github.com/kubernetes/kubeadm/blob/main/docs/ha-considerations.md#keepalived-and-haproxy).
 - Configure keepalived and haproxy to run as static pods.
 
 Refer to `/kubeadm`,`/kubeadm/control_master`, `/kubeadm/control_backup`, and `/kubeadm/worker/` for these files.
@@ -158,6 +173,8 @@ Test the node connection using
 nc -v my.dns.name 6443
 ```
 
+---
+
 ### Control-Plane Node Initialization
 - Initialize the control-plane node as detailed in the [official documentation](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/).
 - Use `kubeadm init` with the `--control-plane-endpoint` flag to start the process.
@@ -166,17 +183,19 @@ You can review the docs for initializing and using kubeadm here: [Using Kubeadm 
 
 Assuming that in a new cluster port 6443 is used for the load-balanced API Server and a virtual IP with the DNS name my.dns.name, an argument --control-plane-endpoint needs to be passed to kubeadm as follows:
 ```bash
-sudo kubeadm init --control-plane-endpoint my.dns.name:6443 [additional arguments ...]
+sudo kubeadm init --pod-network-cidr=10.1.1.0/24 --control-plane-endpoint=my.dns.name:6443 --cri-socket="unix:///var/run/containerd/containerd.sock" [additional arguments ...]
 ```
 
 Note: The kubeadm init flags `--config` and `--certificate-key` cannot be mixed, therefore if you want to use the kubeadm configuration you must add the certificateKey field in the appropriate config locations (under InitConfiguration and JoinConfiguration: controlPlane).
+
+- (Optional )Setup kubeadm using a [configuration file](https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-init/#config-file)
 
 We should see an output similar to:
 ```bash
 ...
 You can now join any number of control-plane node by running the following command on each as a root:
 
-    kubeadm join 192.168.x.xxx:6443 --token {token} --discovery-token-ca-cert-hash sha256:{sha_token} --control-plane --certificate-key f8902e114ef118304e561c3ecd4d0b543adc226b7a07f675f56564185ffe0c07
+    kubeadm join 192.168.x.xxx:6443 --token {token} --discovery-token-ca-cert-hash sha256:{sha_token} --control-plane --certificate-key {sha_token}
 
 Please note that the certificate-key gives access to cluster sensitive data, keep it secret!
 As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you can use kubeadm init phase upload-certs to reload certs afterward.
@@ -195,9 +214,14 @@ kubectl get pod -n kube-system -w
 
 - `--apiserver-advertise-address` can be used to set the advertise address for this particular control-plane node's API server
 - `--control-plane-endpoint=my.dns.name` can be used to set the shared endpoint for all control-plane nodes.
-- kubeadm tries to detect the container runtime automatically. To use containerd we can specify the `--cri-socket argument` to kubeadm.
+- kubeadm tries to detect the container runtime automatically. To use containerd we can specify the `--cri-socket` argument to kubeadm.
 - Use the `--upload-certs` flag with `kubeadm init` for easier certificate management across control plane nodes.
-- For accessing the API Server externally, use `kubectl proxy`.
+- - The `--control-plane` flag tells kubeadm join to create a new control plane.
+- The `--certificate-key` ... will cause the control plane certificates to be downloaded from the kubeadm-certs Secret in the cluster and be decrypted using the given key.
+
+Turning a single control plane cluster created without `--control-plane-endpoint` into a highly available cluster is not supported by kubeadm
+
+For more initialization options, view the [kubeadm docs](https://kubernetes.io/docs/reference/setup-tools/kubeadm/)
 
 To re-upload the certificates and generate a new decryption key, use the following command on a control plane node that is already joined to the cluster:
 ```bash
@@ -212,12 +236,59 @@ The certificate key is a hex encoded string that is an AES key of size 32 bytes.
 Note: The kubeadm-certs Secret and the decryption key expire after two hours.
 Caution: As stated in the command output, the certificate key gives access to cluster sensitive data, keep it secret!
 
+---
+
 ### CNI Networking Setup
 - Apply the chosen CNI plugin following the provided instructions.
 - Ensure the network plugin is compatible with your cluster's configuration.
 - To add a pod CIDR pass the flag `--pod-network-cidr`, or if you are using a kubeadm configuration file set the `podSubnet` field under the networking object of `ClusterConfiguration`.
 
+#### Using Cilium for Cluster Networking
+
+- Cilium documentation for [k8s install](https://docs.cilium.io/en/stable/gettingstarted/k8s-install-default/)
+
+Download the latest cilium binaries on the MASTER ControlPlane node:
+```bash
+curl -LO https://github.com/cilium/cilium-cli/releases/latest/download/cilium-linux-amd64.tar.gz
+``` 
+Then extract the downloaded file to your /usr/local/bin directory with the following command:
+
+```bash
+sudo tar xzvfC cilium-linux-amd64.tar.gz /usr/local/bin
+```
+
+- Install Cilium with the following command: `cilium install`
+- Check the status of the Cilium with: `cilium status`
+
+##### Understanding Cilium components 
+
+To see this list of cilium Pods run:
+```bash
+kubectl get pods --namespace=kube-system -l k8s-app=cilium
+```
+
+The `--pod-network-cidr` flag allows intra-pod networking, using Cilium the default cidr range for cilium is `10.1.1.0/24`.
+
+```bash
+kubeadm init --pod-network-cidr=10.1.1.0/24
+```
+
+- Example cilium kubernetes [production deployment](https://docs.cilium.io/en/stable/network/kubernetes/concepts/)
+
 #### Network Design Considerations
+
+You can also install a Pod network add-on, on the control-plane node or a node that has the kubeconfig credentials:
+
+```bash
+kubectl apply -f <add-on.yaml>
+```
+ 
+- `--apiserver-advertise-address` we can use to manually assign IP address of the API Server
+
+Example init statement:
+```bash
+kubeadm init --apiserver-advertise-address=192.168.x.xxx
+```
 
 Reference: 
 - https://kubernetes.io/docs/concepts/services-networking/
@@ -231,11 +302,7 @@ Reference:
   - https://kubernetes.io/docs/tasks/administer-cluster/coredns/
   - https://doc.traefik.io/traefik/providers/kubernetes-ingress/
 
-You can install a Pod network add-on with the following command on the control-plane node or a node that has the kubeconfig credentials:
-
-```bash
-kubectl apply -f <add-on.yaml>
-```
+---
 
 ### Adding nodes to the cluster
 - Add additional control-plane nodes and worker nodes using the `kubeadm join` command as described in the output of the `kubeadm init` command.
@@ -245,15 +312,8 @@ Execute the join command that was previously given to you by the kubeadm init ou
 ```bash
 sudo kubeadm join 192.168.x.xxx:6443 --token {token} --discovery-token-ca-cert-hash sha256:{sha_token} --control-plane --certificate-key {certificate_key}
 ```
-- The --control-plane flag tells kubeadm join to create a new control plane.
-- The --certificate-key ... will cause the control plane certificates to be downloaded from the kubeadm-certs Secret in the cluster and be decrypted using the given key.
-  
-You can join multiple control-plane nodes in parallel.
 
-Turning a single control plane cluster created without --control-plane-endpoint into a highly available cluster is not supported by kubeadm
-
-For more initialization options, view the [kubeadm docs](https://kubernetes.io/docs/reference/setup-tools/kubeadm/)
-
+---
 
 ### (Optional) Proxying API Server to localhost 
 If you want to connect to the API Server from outside the cluster you can use kubectl proxy:
@@ -262,3 +322,17 @@ If you want to connect to the API Server from outside the cluster you can use ku
 kubectl --kubeconfig ./admin.conf proxy
 ```
 You can now access the API Server locally at http://localhost:8001/api/v1
+
+- For accessing the API Server externally, use `kubectl proxy`.
+
+---
+
+### Using Cilium and crictl as a command line tool
+
+---
+
+### Configuring GPU Scheduling
+
+https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/
+
+
