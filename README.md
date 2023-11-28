@@ -39,12 +39,69 @@
 ---
 
 ## Automatically prepare the machines using scripts
-Find Kubernetes preparation scripts in the [\scripts](\scripts) directory:
+Find Kubernetes preparation scripts in the [/scripts](/kubeadm/scripts) directory:
 - `controlplane-firewall.sh`
 - `worker-firewall.sh`
 - `prepare-k8s.sh`
 
 Use can use these scripts and their variables to pre-configure your Ubuntu machines. Many of these scripts assume default ports and configurations for kubernetes.
+
+Set the selected script variable for ControlPlane or Worker Machines:
+
+```bash
+SELECTED_SCRIPT="controlplane-firewall"
+# OR
+SELECTED_SCRIPT="worker-firewall"
+```
+
+To begin, download the necessary scripts using:
+```bash
+# For every node
+wget https://raw.githubusercontent.com/uhstray-io/open-k8s/main/kubeadm/scripts/prepare-k8s.sh
+
+# For control plane nodes
+wget https://raw.githubusercontent.com/uhstray-io/open-k8s/main/kubeadm/scripts/controlplane-firewall.sh
+
+# For worker nodes
+wget https://raw.githubusercontent.com/uhstray-io/open-k8s/main/kubeadm/scripts/worker-firewall.sh
+```
+
+Set the proper permissions to use the scripts:
+```bash
+sudo chmod +rwx prepare-k8s.sh
+sudo chmod +rwx ${SELECTED_SCRIPT}.sh
+```
+
+Modify the script files with the proper parameters:
+Preparation script...
+```bash
+# CURRENT DEFAULT SHOWN BELOW
+CNI_PLUGINS_VERSION="v1.3.0"
+ARCH="amd64"
+CNI_DEST="/opt/cni/bin"
+DOWNLOAD_DIR="/usr/local/bin"
+CONTAINER_VERSION="v2.0.0-beta.0"
+CRICTL_VERSION="v1.28.0" 
+RUNC_VERSION="v1.1.10"
+K8S_RELEASE="$(curl -sSL https://dl.k8s.io/release/stable.txt)"
+KREL_VERSION="v0.16.2"
+```
+
+Firewall scripts...
+```bash
+LOCAL_NETWORK="192.168.x.x/24"
+```
+
+Execute the prepare script:
+```bash
+sudo bash ./prepare-k8s.sh
+```
+
+Execute the firewall scripts
+Execute the prepare script:
+```bash
+sudo bash ${SELECTED_SCRIPT}.sh
+```
 
 ---
 
