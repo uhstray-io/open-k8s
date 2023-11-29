@@ -29,7 +29,7 @@ if [ -f ./kubectl ]; then
 fi
 
 if [ -d $KUBECTL_DIR ]; then 
-    echo -e "Cleaning up old kubectl install files"
+    echo -e "Cleaning up old kubectl install files\n"
     rm -rf $KUBECTL_DIR
 fi
 
@@ -66,6 +66,7 @@ sudo mkdir -p $INSTALL_DIR
 # Download containerd and extract it
 if [ -d ./containerd-$CONTAINER_VERSION-linux-$ARCH ]; then 
     echo -e "Target version of containerd already downloaded, skipping...\n" 
+    sudo tar Cxzvf /usr/local containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz
     else wget https://github.com/containerd/containerd/releases/download/v${CONTAINER_VERSION}/containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz | sudo tar Cxzvf /usr/local containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz
 fi
 
