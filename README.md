@@ -76,15 +76,22 @@ Modify the script files with the proper parameters:
 Preparation script...
 ```bash
 # CURRENT DEFAULT SHOWN BELOW
-CNI_PLUGINS_VERSION="v1.3.0"
+# Architecture
 ARCH="amd64"
-CNI_DEST="/opt/cni/bin"
-DOWNLOAD_DIR="/usr/local/bin"
-CONTAINER_VERSION="v2.0.0-beta.0"
+K8S_RELEASE="$(curl -sSL https://dl.k8s.io/release/stable.txt)"
+
+# System Versions
+CNI_PLUGINS_VERSION="v1.3.0"
+CONTAINER_VERSION="1.7.8"
 CRICTL_VERSION="v1.28.0" 
 RUNC_VERSION="v1.1.10"
-K8S_RELEASE="$(curl -sSL https://dl.k8s.io/release/stable.txt)"
 KREL_VERSION="v0.16.2"
+
+# Directories
+CNI_DEST="/opt/cni/bin"
+INSTALL_DIR="/opt/bin"
+KUBECTL_DIR="/opt/bin/kubectl"
+SERVICE_DIR="/etc/systemd/system"
 ```
 
 Firewall scripts...
