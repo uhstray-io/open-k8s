@@ -23,12 +23,12 @@ SERVICE_DIR="/etc/systemd/system"
 # Download, install, and check kubectl
 echo -e "Removing any local old versions and downloading the latest version of kubectl...\n"
 
-if [ -f ./kubectl]; then 
-    echo -e "Removing old kubectl downloads"
+if [ -f ./kubectl ]; then 
+    echo -e "Removing old kubectl downloads\n"
     rm -f kubectl 
 fi
 
-if [ -d $KUBECTL_DIR]; then 
+if [ -d $KUBECTL_DIR ]; then 
     echo -e "Cleaning up old kubectl install files"
     rm -rf $KUBECTL_DIR
 fi
@@ -38,15 +38,17 @@ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stabl
 # Validating kubectl binary
 echo -e "Validating kubectl binary...\n\n"
 
-if [ -f ./kubectl.sha256]; then 
+if [ -f ./kubectl.sha256 ]; then 
     rm -f kubectl.sha256
 fi
 
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${ARCH}/kubectl.sha256"
 
-echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
+KUBECTL_CHECK="$(echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check)"
 
-if [$(echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check) -e "kubectl: OK"]; then 
+echo -e "$KUBECTL_CHECK\n"
+
+if [ "$KUBECTL_CHECK" = "kubectl: OK" ]; then 
     echo -e "sha256sum check SUCCESSFUL..." break 
 else echo -e "sha256sum check FAILED... please verify your download URLs for kubectl\n" 
     exit 1
@@ -57,39 +59,39 @@ sudo install -o root -g root -m 0755 kubectl $KUBECTL_DIR
 echo -e "Installing containerd dependencies...\n"
 
 # Create the download directory for binaries
-sudo mkdir -p "$INSTALL_DIR"
+sudo mkdir -p $INSTALL_DIR
 
 # Download containerd and extract it
-if [ -d ./containerd-${CONTAINER_VERSION}-linux-${ARCH}]; then 
+if [ -d ./containerd-$CONTAINER_VERSION-linux-$ARCH ]; then 
     echo -e "Target version of containerd already downloaded, skipping...\n" 
     else wget https://github.com/containerd/containerd/releases/download/v${CONTAINER_VERSION}/containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz | sudo tar Cxzvf /usr/local containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz
 fi
 
 # Setup containerd as a service
-if [ -f ./containerd.service]; then 
+if [ -f ./containerd.service ]; then 
     echo -e "Removing old containerd.service unit...\n" 
     rm -f containerd.service
 fi
 wget https://raw.githubusercontent.com/containerd/containerd/main/containerd.service 
-sudo cp ./containerd.service ${SERVICE_DIR}/containerd.service
+sudo cp ./containerd.service $SERVICE_DIR/containerd.service
 
 sudo systemctl daemon-reload
 sudo systemctl enable --now containerd
 
 # Install runc
-if [ -d ${RUNC_DIR}/runc]; then 
-    echo "RUNC already installed in ${RUNC_DIR}/runc\n" 
+if [ -d $RUNC_DIR/runc ]; then 
+    echo "RUNC already installed in $RUNC_DIR/runc\n" 
 else 
     curl -L "https://github.com/opencontainers/runc/releases/download/${RUNC_VERSION}/run.${ARCH}.tar.gz"
-    sudo install -m 755 runc.${ARCH} ${RUNC_DIR}/runc
+    sudo install -m 755 runc.$ARCH $RUNC_DIR/runc
 fi
 
 # Install CNI Plugins
-if [ -d $CNI_DEST]; then 
+if [ -d $CNI_DEST ]; then 
     echo "Cleaning up existing CNI resources...\n"
     sudo rm -rf $CNI_DEST
 else 
-    sudo mkdir -p "$CNI_DEST"
+    sudo mkdir -p $CNI_DEST
 fi
 
 echo -e "Downloading and installing CNI Resources...\n"
@@ -101,7 +103,7 @@ echo -e "#########--------Containerd, CNI Plugins, and RUNC Installed.--------##
 echo -e "Setting up kubeadm and kubelet...\n"
 
 # Install crictl for kubeadm and CRI
-if [ -f ${INSTALL_DIR}/crictl-${CRICTL_VERSION}-linux-${ARCH}]; then 
+if [ -f $INSTALL_DIR/crictl-$CRICTL_VERSION-linux-$ARCH ]; then 
     echo -e "Proper crictl version already downloaded, skipping...\n" 
     else wget curl -L "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz" | sudo tar -C $INSTALL_DIR -xz
 fi
@@ -112,9 +114,9 @@ sudo chmod +x {kubeadm,kubelet}
 
 curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${KREL_VERSION}/cmd/krel/templates/latest/kubelet/kubelet.service" | sed "s:/usr/bin:${INSTALL_DIR}:g" | sudo tee ${SERVICE_DIR}/kubelet.service
 
-if ! [-f ${SERVICE_DIR}/kubelet.service.d]; then 
-    echo -e "Creating kubelet.service directory: ${SERVICE_DIR}/kubelet.service.d"
-    sudo mkdir -p ${SERVICE_DIR}/kubelet.service.d 
+if ! [-f $SERVICE_DIR/kubelet.service.d ]; then 
+    echo -e "Creating kubelet.service directory: $SERVICE_DIR/kubelet.service.d"
+    sudo mkdir -p $SERVICE_DIR/kubelet.service.d 
 fi
 
 curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${KREL_VERSION}/cmd/krel/templates/latest/kubeadm/10-kubeadm.conf" | sed "s:/usr/bin:${INSTALL_DIR}:g" | sudo tee ${SERVICE_DIR}/kubelet.service.d/10-kubeadm.conf
