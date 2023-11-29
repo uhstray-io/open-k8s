@@ -28,7 +28,9 @@ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stabl
 
 echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
 
-if [$(echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check) -e "kubectl: OK"]; then echo -e "sha256sum check SUCCESSFUL..." break else echo -e "sha256sum check FAILED... please verify your download URLs for kubectl\n" exit 1
+if [$(echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check) -e "kubectl: OK"]; 
+    then echo -e "sha256sum check SUCCESSFUL..." break 
+else echo -e "sha256sum check FAILED... please verify your download URLs for kubectl\n" exit 1
 
 sudo install -o root -g root -m 0755 kubectl $KUBECTL_DIR
 
