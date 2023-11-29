@@ -22,11 +22,14 @@ SERVICE_DIR="/etc/systemd/system"
 
 # Download, install, and check kubectl
 echo -e "Removing any local old versions and downloading the latest version of kubectl...\n"
+
 if [ -f ./kubectl]; then 
+    echo -e "Removing old kubectl downloads"
     rm -f kubectl 
 fi
 
 if [ -d $KUBECTL_DIR]; then 
+    echo -e "Cleaning up old kubectl install files"
     rm -rf $KUBECTL_DIR
 fi
 
