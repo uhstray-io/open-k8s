@@ -19,6 +19,19 @@ INSTALL_DIR="/usr/local/bin"
 KUBECTL_DIR="/usr/local/bin/kubectl"
 SERVICE_DIR="/etc/systemd/system"
 
+# Download, install, and check kubectl
+echo -e "Installing kubectl...\n"
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${ARCH}/kubectl"
+
+echo -e "Validating kubectl binary...\n\n"
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${ARCH}/kubectl.sha256"
+
+echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
+
+if [$(echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check) -e "kubectl: OK"]; then echo -e "sha256sum check SUCCESSFUL..." break else echo -e "sha256sum check FAILED... please verify your download URLs for kubectl\n" exit 1
+
+sudo install -o root -g root -m 0755 kubectl $KUBECTL_DIR
+
 echo -e "Installing container dependencies...\n"
 
 # Install CNI Plugins
@@ -62,17 +75,6 @@ sudo mkdir -p ${SERVICE_DIR}/kubelet.service.d
 curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${KREL_VERSION}/cmd/krel/templates/latest/kubeadm/10-kubeadm.conf" | sed "s:/usr/bin:${INSTALL_DIR}:g" | sudo tee ${SERVICE_DIR}/kubelet.service.d/10-kubeadm.conf
 
 echo -e "#########--------Kubeadm and Kubelet Configured--------#########\n\n"
-
-# Download, install, and check kubectl
-echo -e "Installing kubectl...\n"
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${ARCH}/kubectl"
-
-echo -e "Validating kubectl binary...\n\n"
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${ARCH}/kubectl.sha256"
-
-echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
-
-sudo install -o root -g root -m 0755 kubectl $KUBECTL_DIR
 
 sudo kubectl version --client --output=yaml
 
