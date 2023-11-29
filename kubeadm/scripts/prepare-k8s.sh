@@ -21,7 +21,7 @@ RUNC_DIR="/usr/local/sbin"
 SERVICE_DIR="/etc/systemd/system"
 
 # Download, install, and check kubectl
-echo -e "Installing kubectl...\n"
+echo -e "Removing any local old versions and downloading kubectl...\n"
 if [test -f ./kubectl]; then rm -f kubectl 
     else break
 fi
@@ -46,7 +46,7 @@ fi
 
 sudo install -o root -g root -m 0755 kubectl $KUBECTL_DIR
 
-echo -e "Installing container dependencies...\n"
+echo -e "Installing containerd dependencies...\n"
 
 # Create the download directory for binaries
 sudo mkdir -p "$INSTALL_DIR"
