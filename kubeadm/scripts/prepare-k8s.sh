@@ -49,12 +49,14 @@ KUBECTL_CHECK="$(echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check)"
 echo -e "$KUBECTL_CHECK\n"
 
 if [ "$KUBECTL_CHECK" = "kubectl: OK" ]; then 
-    echo -e "sha256sum check SUCCESSFUL..." break 
+    echo -e "sha256sum check SUCCESSFUL...\n"
 else echo -e "sha256sum check FAILED... please verify your download URLs for kubectl\n" 
     exit 1
 fi
 
 sudo install -o root -g root -m 0755 kubectl $KUBECTL_DIR
+
+echo -e "##################----------------Kubectl verified and installed----------------##################\n\n"
 
 echo -e "Installing containerd dependencies...\n"
 
@@ -78,17 +80,19 @@ sudo cp ./containerd.service $SERVICE_DIR/containerd.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now containerd
 
+echo -e "##################----------------Containerd installed and enabled----------------##################\n\n"
+
 # Install runc
-if [ -d $RUNC_DIR/runc ]; then 
-    echo "RUNC already installed in $RUNC_DIR/runc\n" 
+if [ -d "$RUNC_DIR/runc" ]; then 
+    echo -e "RUNC already installed in $RUNC_DIR/runc\n" 
 else 
     curl -L "https://github.com/opencontainers/runc/releases/download/${RUNC_VERSION}/run.${ARCH}.tar.gz"
     sudo install -m 755 runc.$ARCH $RUNC_DIR/runc
 fi
 
 # Install CNI Plugins
-if [ -d $CNI_DEST ]; then 
-    echo "Cleaning up existing CNI resources...\n"
+if [ -d "$CNI_DEST" ]; then 
+    echo -e "Cleaning up existing CNI resources...\n"
     sudo rm -rf $CNI_DEST
 else 
     sudo mkdir -p $CNI_DEST
@@ -97,10 +101,12 @@ fi
 echo -e "Downloading and installing CNI Resources...\n"
 curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_PLUGINS_VERSION}/cni-plugins-linux-${ARCH}-${CNI_PLUGINS_VERSION}.tgz" | sudo tar -C $CNI_DEST -xz
 
-echo -e "#########--------Containerd, CNI Plugins, and RUNC Installed.--------#########\n\n"
+echo -e "##################----------------CNI Plugins and RUNC Installed.----------------##################\n\n"
 
 # Download and setup kubeadm and kubelet
 echo -e "Setting up kubeadm and kubelet...\n"
+
+https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.28.0/crictl-v1.28.0-linux-amd64.tar.gz
 
 # Install crictl for kubeadm and CRI
 if [ -f $INSTALL_DIR/crictl-$CRICTL_VERSION-linux-$ARCH ]; then 
@@ -121,7 +127,7 @@ fi
 
 curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${KREL_VERSION}/cmd/krel/templates/latest/kubeadm/10-kubeadm.conf" | sed "s:/usr/bin:${INSTALL_DIR}:g" | sudo tee ${SERVICE_DIR}/kubelet.service.d/10-kubeadm.conf
 
-echo -e "#########--------Kubeadm and Kubelet Configured--------#########\n\n"
+echo -e "##################----------------Kubeadm and Kubelet Configured----------------##################\n\n"
 
 echo -e "Testing cluster resources...\n"
 
@@ -135,4 +141,4 @@ echo -e "###End cluster info###\n\n"
 echo -e "Enabling kubectl with systemctl...\n"
 sudo systemctl enable --now kubelet
 
-echo "#########--------Kubernetes setup complete. Use kubectl to access...--------#########"
+echo "##################----------------Kubernetes setup complete. Use kubectl to access...----------------##################"
