@@ -21,9 +21,11 @@ RUNC_DIR="/usr/local/sbin"
 SERVICE_DIR="/etc/systemd/system"
 
 # Download, install, and check kubectl
-echo -e "Removing any local old versions and downloading kubectl...\n"
-if [test -f ./kubectl]; then rm -f kubectl 
-    else break
+echo -e "Removing any local old versions and downloading the latest version of kubectl...\n"
+if [ -f ./kubectl]; then rm -f kubectl 
+fi
+
+if [ -d $KUBECTL_DIR] then rm -rf $KUBECTL_DIR
 fi
 
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${ARCH}/kubectl"
@@ -31,8 +33,7 @@ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stabl
 # Validating kubectl binary
 echo -e "Validating kubectl binary...\n\n"
 
-if [test -f ./kubectl.sha256]; then rm -f kubectl.sha256
-    else break
+if [ -f ./kubectl.sha256]; then rm -f kubectl.sha256
 fi
 
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${ARCH}/kubectl.sha256"
@@ -52,16 +53,14 @@ echo -e "Installing containerd dependencies...\n"
 sudo mkdir -p "$INSTALL_DIR"
 
 # Download containerd and extract it
-if [test -f ./containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz]; then echo -e "Target version of containerd already downloaded, skipping...\n" 
-        break
+if [ -f ./containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz]; then echo -e "Target version of containerd already downloaded, skipping...\n" 
     else wget https://github.com/containerd/containerd/releases/download/v${CONTAINER_VERSION}/containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz | sudo tar Cxzvf /usr/local containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz
 fi
 
 # Setup containerd as a service
-if [test -f ./containerd.service]; 
+if [ -f ./containerd.service]; 
     then echo -e "Removing old containerd.service unit...\n" 
         rm -f containerd.service
-    else break
 fi
 wget https://raw.githubusercontent.com/containerd/containerd/main/containerd.service 
 sudo cp ./containerd.service ${SERVICE_DIR}/containerd.service
@@ -70,20 +69,20 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now containerd
 
 # Install runc
-if [test -d ${RUNC_DIR}/runc];
+if [ -d ${RUNC_DIR}/runc];
     then echo "RUNC already installed in ${RUNC_DIR}/runc\n" 
-    break
 else 
     curl -L "https://github.com/opencontainers/runc/releases/download/${RUNC_VERSION}/run.${ARCH}.tar.gz"
     sudo install -m 755 runc.${ARCH} ${RUNC_DIR}/runc
 fi
 
 # Install CNI Plugins
-if [test -d $CNI_DEST];
+if [ -d $CNI_DEST];
     then echo "Cleaning up existing CNI resources...\n"
     sudo rm -rf $CNI_DEST
 else 
     sudo mkdir -p "$CNI_DEST"
+fi
 
 echo -e "Downloading and installing CNI Resources...\n"
 curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_PLUGINS_VERSION}/cni-plugins-linux-${ARCH}-${CNI_PLUGINS_VERSION}.tgz" | sudo tar -C $CNI_DEST -xz
@@ -94,9 +93,7 @@ echo -e "#########--------Containerd, CNI Plugins, and RUNC Installed.--------##
 echo -e "Setting up kubeadm and kubelet...\n"
 
 # Install crictl for kubeadm and CRI
-if [test -f ${INSTALL_DIR}/crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz]; 
-    then echo -e "Proper crictl version already downloaded, skipping...\n" 
-    break
+if [ -f ${INSTALL_DIR}/crictl-${CRICTL_VERSION}-linux-${ARCH}]; then echo -e "Proper crictl version already downloaded, skipping...\n" 
     else wget curl -L "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz" | sudo tar -C $INSTALL_DIR -xz
 fi
 
@@ -106,9 +103,7 @@ sudo chmod +x {kubeadm,kubelet}
 
 curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${KREL_VERSION}/cmd/krel/templates/latest/kubelet/kubelet.service" | sed "s:/usr/bin:${INSTALL_DIR}:g" | sudo tee ${SERVICE_DIR}/kubelet.service
 
-if [test -f ${SERVICE_DIR}/kubelet.service.d]; then break 
-else
-    echo -e "Creating kubelet.service directory: ${SERVICE_DIR}/kubelet.service.d"
+if ! [-f ${SERVICE_DIR}/kubelet.service.d]; then echo -e "Creating kubelet.service directory: ${SERVICE_DIR}/kubelet.service.d"
     sudo mkdir -p ${SERVICE_DIR}/kubelet.service.d 
 fi
 
