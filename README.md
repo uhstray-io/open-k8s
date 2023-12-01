@@ -24,6 +24,10 @@
     - [Configuring GPU Scheduling](#configuring-gpu-scheduling)
    
 ---
+
+# Reference Architecture Diagram
+
+![Cloud-One Reference Architecture](https://github.com/uhstray-io/open-k8s/assets/24553698/23d00464-c481-4ae5-b2f4-ec6a9541837f)
       
 # Deploy High Availability Kubernetes Cluster Using Kubeadm on a Stack Control Plane
 ## Official Documentation
