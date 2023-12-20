@@ -85,19 +85,35 @@ echo -e "##################----------------Containerd installed and enabled-----
 
 
 echo -e "##################----------------Installing RUNC and CNI Resources----------------##################\n\n"
+
 # Install runc
 if [ -d "${RUNC_DIR}/runc" ]; then 
     echo -e "RUNC already installed in ${RUNC_DIR}/runc\n" 
 else 
-    curl -L "https://github.com/opencontainers/runc/releases/download/${RUNC_VERSION}/run.${ARCH}"
-    sudo install -m 755 runc.$ARCH ${RUNC_DIR}/runc
+    echo -e "Installing RUNC...\n"
+    if curl -L "https://github.com/opencontainers/runc/releases/download/${RUNC_VERSION}/runc.${ARCH}"; then
+        echo -e "RUNC downloaded successfully.\n"
+        if sudo install -m 755 "runc.$ARCH" "${RUNC_DIR}/runc"; then
+            echo -e "RUNC installed successfully.\n"
+        else
+            echo -e "Failed to install RUNC. Please check permissions and try again.\n"
+            exit 1
+        fi
+    else
+        echo -e "Failed to download RUNC. Please check the URL and try again.\n"
+        exit 1
+    fi
 fi
 
 # Install CNI Plugins
 if [ -d "$CNI_DEST" ]; then 
     echo -e "Cleaning up existing CNI resources...\n"
-    sudo rm -rf $CNI_DEST
-    
+    if sudo rm -rf "$CNI_DEST"; then
+        echo -e "CNI resources cleaned up successfully.\n"
+    else
+        echo -e "Failed to clean up CNI resources. Please check permissions and try again.\n"
+        exit 1
+    fi
 fi
 
 sudo mkdir -p $CNI_DEST
