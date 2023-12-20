@@ -111,9 +111,9 @@ echo -e "##################----------------CNI Plugins and RUNC Installed.------
 echo -e "Setting up kubeadm and kubelet...\n"
 
 # Install crictl for kubeadm and CRI
-if [ -f ${INSTALL_DIR}/crictl-$CRICTL_VERSION-linux-${ARCH} ]; then 
+if [ -d ${INSTALL_DIR}/crictl-$CRICTL_VERSION-linux-${ARCH} ]; then 
     echo -e "Proper crictl version already downloaded, skipping...\n" 
-else
+else 
     if [ -f ./crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz.sha256 ]; then 
         rm -f crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz.sha256
     fi
