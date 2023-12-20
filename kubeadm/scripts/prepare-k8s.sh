@@ -153,7 +153,7 @@ fi
 sudo mkdir -p $CNI_DEST
 
 echo -e "Downloading and installing CNI Resources...\n"
-curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_PLUGINS_VERSION}/cni-plugins-linux-${ARCH}-${CNI_PLUGINS_VERSION}.tgz" | sudo tar -C $CNI_DEST -xz
+curl -LO "https://github.com/containernetworking/plugins/releases/download/${CNI_PLUGINS_VERSION}/cni-plugins-linux-${ARCH}-${CNI_PLUGINS_VERSION}.tgz" | sudo tar -C $CNI_DEST -xz
 
 echo -e "====================== CNI Plugins and RUNC Installed. ======================\n\n"
 
@@ -173,7 +173,7 @@ else
 
     # Download crictl
     echo -e "Downloading crictl...\n"
-    curl -L "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz" 
+    curl -LO "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz" 
     
     # Download crictl checksum file
     echo "Downloading crictl checksum..."
