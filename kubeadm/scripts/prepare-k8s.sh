@@ -91,7 +91,7 @@ if [ -d "${RUNC_DIR}/runc" ]; then
     echo -e "RUNC already installed in ${RUNC_DIR}/runc\n" 
 else 
     echo -e "Installing RUNC...\n"
-    if curl -L "https://github.com/opencontainers/runc/releases/download/${RUNC_VERSION}/runc.${ARCH}"; then
+    if wget "https://github.com/opencontainers/runc/releases/download/${RUNC_VERSION}/runc.${ARCH}"; then
         echo -e "RUNC downloaded successfully.\n"
         if sudo install -m 755 "runc.$ARCH" "${RUNC_DIR}/runc"; then
             echo -e "RUNC installed successfully.\n"
