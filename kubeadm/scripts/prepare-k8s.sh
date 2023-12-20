@@ -1,3 +1,4 @@
+set -e
 #!/bin/bash
 
 # Setup Versioning Variables
@@ -20,29 +21,45 @@ export KUBECTL_DIR="/usr/local/bin/kubectl"
 export RUNC_DIR="/usr/local/sbin"
 export SERVICE_DIR="/etc/systemd/system"
 
+
+
+
+
 # Download, install, and check kubectl
+
+KUBECTL_VERSION_URL="https://dl.k8s.io/release/stable.txt"
+KUBECTL_BINARY_URL="https://dl.k8s.io/release/$(curl -L -s $KUBECTL_VERSION_URL)/bin/linux/${ARCH}/kubectl"
+KUBECTL_SHA_URL="${KUBECTL_BINARY_URL}.sha256"
+CONTAINERD_SERVICE_URL="https://raw.githubusercontent.com/containerd/containerd/main/containerd.service"
+
 echo -e "Removing any local old versions and downloading the latest version of kubectl...\n"
 
-if [ -f ./kubectl ]; then 
-    echo -e "Removing old kubectl downloads\n"
-    rm -f kubectl 
-fi
 
+# If the kubectl directory exists, clean it up
 if [ -d $KUBECTL_DIR ]; then 
     echo -e "Cleaning up old kubectl install files\n"
     rm -rf $KUBECTL_DIR
 fi
 
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${ARCH}/kubectl"
+mkdir -p $KUBECTL_DIR
+
+# If a local kubectl binary exists, remove it
+if [ -f ./kubectl ]; then 
+    echo -e "Removing old kubectl downloads\n"
+    rm -f kubectl 
+fi
+
+# Print a message about what the script is doing
+echo "Downloading the latest version of kubectl..."
+curl -LO $KUBECTL_BINARY_URL
 
 # Validating kubectl binary
 echo -e "Validating kubectl binary...\n\n"
-
 if [ -f ./kubectl.sha256 ]; then 
     rm -f kubectl.sha256
 fi
 
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${ARCH}/kubectl.sha256"
+curl -LO $KUBECTL_SHA_URL
 
 KUBECTL_CHECK="$(echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check)"
 
@@ -50,7 +67,8 @@ echo -e "$KUBECTL_CHECK\n"
 
 if [ "$KUBECTL_CHECK" = "kubectl: OK" ]; then 
     echo -e "SHA256SUM CHECK SUCCESSFUL...\n"
-else echo -e "SHA256SUM CHECK FAILED... please verify your download URLs for kubectl\n" 
+else 
+    echo -e "SHA256SUM CHECK FAILED... please verify your download URLs for kubectl\n" 
     exit 1
 fi
 
@@ -58,33 +76,53 @@ sudo install -o root -g root -m 0755 kubectl $KUBECTL_DIR
 
 echo -e "##################----------------Kubectl verified and installed----------------##################\n\n"
 
+
+
+
+# Print a message about what the script is doing
 echo -e "Installing containerd dependencies...\n"
 
 # Create the download directory for binaries
+echo -e "Creating directory for binaries...\n"
 sudo mkdir -p $INSTALL_DIR
 
 # Download containerd and extract it
+echo -e "Checking for existing containerd download...\n"
 if [ -d ./containerd-${CONTAINER_VERSION}-linux-${ARCH} ]; then 
-    echo -e "Target version of containerd already downloaded, skipping...\n" 
+    echo -e "Target version of containerd already downloaded, skipping download and extracting...\n" 
     sudo tar Cxzvf /usr/local containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz
-    else wget https://github.com/containerd/containerd/releases/download/${CONTAINER_VERSION}/containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz | sudo tar Cxzvf /usr/local containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz
+else 
+    echo -e "Downloading containerd...\n"
+    wget -O containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz https://github.com/containerd/containerd/releases/download/${CONTAINER_VERSION}/containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz | sudo tar Cxzvf /usr/local containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz
 fi
 
-# Setup containerd as a service
+# Check for existing containerd service unit and remove if exists
+echo -e " "Checking for existing containerd service unit...\n"
 if [ -f ./containerd.service ]; then 
-    echo -e "Removing old containerd.service unit...\n" 
+    echo "Found existing containerd service unit. Removing..."
     rm -f containerd.service
 fi
-wget https://raw.githubusercontent.com/containerd/containerd/main/containerd.service 
+
+# Download containerd service unit
+echo "Downloading containerd service unit..."
+wget -O containerd.service $CONTAINERD_SERVICE_URL
+
+# Copy the service unit to the service directory
+echo "Copying containerd service unit to service directory..."
 sudo cp ./containerd.service $SERVICE_DIR/containerd.service
 
+# Reload the systemd daemon and enable containerd service
+echo "Reloading systemd daemon and enabling containerd service..."
 sudo systemctl daemon-reload
 sudo systemctl enable --now containerd
 
-echo -e "##################----------------Containerd installed and enabled----------------##################\n\n"
+echo -e "======================Containerd installed and enabled.======================\n"
+
+echo -e "======================Preparing to install RUNC and CNI Resources....======================\n"
 
 
-echo -e "##################----------------Installing RUNC and CNI Resources----------------##################\n\n"
+
+
 
 # Install runc
 if [ -d "${RUNC_DIR}/runc" ]; then 
@@ -105,6 +143,9 @@ else
     fi
 fi
 
+
+
+
 # Install CNI Plugins
 if [ -d "$CNI_DEST" ]; then 
     echo -e "Cleaning up existing CNI resources...\n"
@@ -122,6 +163,9 @@ echo -e "Downloading and installing CNI Resources...\n"
 curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_PLUGINS_VERSION}/cni-plugins-linux-${ARCH}-${CNI_PLUGINS_VERSION}.tgz" | sudo tar -C $CNI_DEST -xz
 
 echo -e "##################----------------CNI Plugins and RUNC Installed.----------------##################\n\n"
+
+
+
 
 # Download and setup kubeadm and kubelet
 echo -e "Setting up kubeadm and kubelet...\n"
