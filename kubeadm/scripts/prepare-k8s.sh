@@ -3,22 +3,22 @@
 # Setup Versioning Variables
 
 # Architecture
-ARCH="amd64"
-K8S_RELEASE="$(curl -sSL https://dl.k8s.io/release/stable.txt)"
+export ARCH="amd64"
+export K8S_RELEASE="$(curl -sSL https://dl.k8s.io/release/stable.txt)"
 
 # System Versions
-CNI_PLUGINS_VERSION="v1.3.0"
-CONTAINER_VERSION="1.7.8"
-CRICTL_VERSION="v1.28.0" 
-RUNC_VERSION="v1.1.10"
-KREL_VERSION="v0.16.2"
+export CNI_PLUGINS_VERSION="v1.3.0"
+export CONTAINER_VERSION="1.7.8"
+export CRICTL_VERSION="v1.28.0" 
+export RUNC_VERSION="v1.1.10"
+export KREL_VERSION="v0.16.2"
 
 # Directories
-CNI_DEST="/opt/cni/bin"
-INSTALL_DIR="/usr/local/bin"
-KUBECTL_DIR="/usr/local/bin/kubectl"
-RUNC_DIR="/usr/local/sbin"
-SERVICE_DIR="/etc/systemd/system"
+export CNI_DEST="/opt/cni/bin"
+export INSTALL_DIR="/usr/local/bin"
+export KUBECTL_DIR="/usr/local/bin/kubectl"
+export RUNC_DIR="/usr/local/sbin"
+export SERVICE_DIR="/etc/systemd/system"
 
 # Download, install, and check kubectl
 echo -e "Removing any local old versions and downloading the latest version of kubectl...\n"
@@ -64,7 +64,7 @@ echo -e "Installing containerd dependencies...\n"
 sudo mkdir -p $INSTALL_DIR
 
 # Download containerd and extract it
-if [ -d ./containerd-$CONTAINER_VERSION-linux-$ARCH ]; then 
+if [ -d ./containerd-${CONTAINER_VERSION}-linux-${ARCH} ]; then 
     echo -e "Target version of containerd already downloaded, skipping...\n" 
     sudo tar Cxzvf /usr/local containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz
     else wget https://github.com/containerd/containerd/releases/download/v${CONTAINER_VERSION}/containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz | sudo tar Cxzvf /usr/local containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz
@@ -87,7 +87,7 @@ echo -e "##################----------------Containerd installed and enabled-----
 if [ -d "$RUNC_DIR/runc" ]; then 
     echo -e "RUNC already installed in $RUNC_DIR/runc\n" 
 else 
-    curl -L "https://github.com/opencontainers/runc/releases/download/${RUNC_VERSION}/run.${ARCH}.tar.gz"
+    curl -L "https://github.com/opencontainers/runc/releases/download/${RUNC_VERSION}/run.${ARCH}"
     sudo install -m 755 runc.$ARCH $RUNC_DIR/runc
 fi
 
@@ -108,9 +108,25 @@ echo -e "##################----------------CNI Plugins and RUNC Installed.------
 echo -e "Setting up kubeadm and kubelet...\n"
 
 # Install crictl for kubeadm and CRI
-if [ -f $INSTALL_DIR/crictl-$CRICTL_VERSION-linux-$ARCH ]; then 
+if [ -f ${INSTALL_DIR}/crictl-$CRICTL_VERSION-linux-${ARCH} ]; then 
     echo -e "Proper crictl version already downloaded, skipping...\n" 
-    else wget curl -L "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz" | sudo tar -C $INSTALL_DIR -xz
+else
+    if [ -f ./crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz.sha256 ]; then 
+        rm -f crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz.sha256
+    fi
+
+    curl -LO "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz.sha256"
+
+    CRICRTL_CHECK="$(echo "$(cat crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz.sha256)  crictl" | sha256sum --check)"
+
+    echo -e "$CRICTL_CHECK\n"
+
+    if [ "$CRICTL_CHECK" = "kubectl: OK" ]; then 
+        echo -e "sha256sum check SUCCESSFUL...\n"
+        wget curl -L "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz" | sudo tar -C $INSTALL_DIR -xz
+    else echo -e "sha256sum check FAILED... please verify your download URLs for kubectl\n" 
+        exit 1
+    fi
 fi
 
 cd $INSTALL_DIR
