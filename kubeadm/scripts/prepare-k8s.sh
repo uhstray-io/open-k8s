@@ -1,4 +1,3 @@
-set -e
 #!/bin/bash
 
 # Setup Versioning Variables
@@ -21,12 +20,7 @@ export KUBECTL_DIR="/usr/local/bin/kubectl"
 export RUNC_DIR="/usr/local/sbin"
 export SERVICE_DIR="/etc/systemd/system"
 
-
-
-
-
-# Download, install, and check kubectl
-
+# Initialize dynamics variables
 KUBECTL_VERSION_URL="https://dl.k8s.io/release/stable.txt"
 KUBECTL_BINARY_URL="https://dl.k8s.io/release/$(curl -L -s $KUBECTL_VERSION_URL)/bin/linux/${ARCH}/kubectl"
 KUBECTL_SHA_URL="${KUBECTL_BINARY_URL}.sha256"
@@ -34,6 +28,7 @@ CONTAINERD_SERVICE_URL="https://raw.githubusercontent.com/containerd/containerd/
 
 echo -e "Removing any local old versions and downloading the latest version of kubectl...\n"
 
+# Download, install, and check kubectl
 
 # If the kubectl directory exists, clean it up
 if [ -d $KUBECTL_DIR ]; then 
@@ -87,12 +82,14 @@ sudo mkdir -p $INSTALL_DIR
 # Download containerd and extract it
 echo -e "Checking for existing containerd download...\n"
 if [ -d ./containerd-${CONTAINER_VERSION}-linux-${ARCH} ]; then 
-    echo -e "Target version of containerd already downloaded, skipping download and extracting...\n" 
-    sudo tar Cxzvf /usr/local containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz
+    echo -e "Target version of containerd already downloaded, skipping download and extracting...\n"
 else 
     echo -e "Downloading containerd...\n"
-    wget -O containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz https://github.com/containerd/containerd/releases/download/${CONTAINER_VERSION}/containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz | sudo tar Cxzvf /usr/local containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz
+    wget https://github.com/containerd/containerd/releases/download/${CONTAINER_VERSION}/containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz 
 fi
+
+# Exctract containerd to the local user directory
+sudo tar Cxzvf /usr/local containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz
 
 # Check for existing containerd service unit and remove if exists
 echo -e "Checking for existing containerd service unit...\n"
@@ -107,7 +104,7 @@ wget -O containerd.service $CONTAINERD_SERVICE_URL
 
 # Copy the service unit to the service directory
 echo "Copying containerd service unit to service directory..."
-sudo cp ./containerd.service $SERVICE_DIR/containerd.service
+sudo cp ./containerd.service "$SERVICE_DIR/containerd.service"
 
 # Reload the systemd daemon and enable containerd service
 echo "Reloading systemd daemon and enabling containerd service..."
@@ -116,11 +113,11 @@ sudo systemctl enable --now containerd
 
 echo -e "====================== Containerd installed and enabled. ======================\n"
 
+
+
+
+# Install RUNC and CNI Plugins
 echo -e "====================== Preparing to install RUNC and CNI Resources.... ======================\n"
-
-
-
-
 
 # Install runc
 if [ -d "${RUNC_DIR}/runc" ]; then 
@@ -140,8 +137,6 @@ else
         exit 1
     fi
 fi
-
-
 
 
 # Install CNI Plugins
@@ -164,17 +159,16 @@ echo -e "====================== CNI Plugins and RUNC Installed. ================
 
 
 
-
 # Download and setup kubeadm and kubelet
 echo -e "Setting up kubeadm and kubelet...\n"
 
 # Check if crictl is already downloaded
-if [ -d ${INSTALL_DIR}/crictl-$CRICTL_VERSION-linux-${ARCH} ]; then 
+if [ -d "${INSTALL_DIR}/crictl-$CRICTL_VERSION-linux-${ARCH}" ]; then 
     echo "Proper crictl version already downloaded, skipping..." 
 else 
     # Remove old crictl checksum file if it exists
-    if [ -f ./crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz.sha256 ]; then 
-        rm -f crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz.sha256
+    if [ -f "./crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz.sha256" ]; then 
+        rm -f "crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz.sha256"
     fi
 
     # Download crictl
@@ -193,7 +187,7 @@ else
     # If the checksum is OK, download and extract crictl
     if [ "$CRICTL_CHECK" = "crictl: OK" ]; then 
         echo -e "SHA256SUM CHECK SUCCESSFUL. Downloading crictl...\n"
-        sudo tar Cxzvf $INSTALL_DIR crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz
+        sudo tar Cxzvf $INSTALL_DIR "crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz"
     else 
         echo -e "SHA256SUM CHECK FAILED. Please verify your download URLs for kubectl.\n" 
         exit 1
@@ -213,19 +207,20 @@ echo -e "Configuring kubelet service...\n"
 curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${KREL_VERSION}/cmd/krel/templates/latest/kubelet/kubelet.service" | sed "s:/usr/bin:${INSTALL_DIR}:g" | sudo tee ${SERVICE_DIR}/kubelet.service
 
 # Create the kubelet service directory if it doesn't exist
-if ! [ -f ${SERVICE_DIR}/kubelet.service.d ]; then 
+if ! [ -f "${SERVICE_DIR}/kubelet.service.d" ]; then 
     echo -e "Creating kubelet.service directory: ${SERVICE_DIR}/kubelet.service.d\n"
-    sudo mkdir -p ${SERVICE_DIR}/kubelet.service.d 
+    sudo mkdir -p "${SERVICE_DIR}/kubelet.service.d" 
 fi
 
 # Download and configure the kubeadm configuration
 echo -e "Configuring kubeadm...\n"
 curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${KREL_VERSION}/cmd/krel/templates/latest/kubeadm/10-kubeadm.conf" | sed "s:/usr/bin:${INSTALL_DIR}:g" | sudo tee ${SERVICE_DIR}/kubelet.service.d/10-kubeadm.conf
 
-echo -e "Kubeadm and Kubelet configured successfully.\n"
+echo -e "====================== Kubeadm and Kubelet configured successfully. ======================\n"
 
 
 
+# Initialize and Test the Kubernetes Cluster
 
 echo -e "Testing cluster resources...\n"
 
