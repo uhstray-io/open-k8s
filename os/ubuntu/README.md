@@ -11,7 +11,7 @@ sudo apt install openssh-server
 ### Generate RSA Key Pair on Your Local Machine:
 If you haven't generated an RSA key pair on your local machine, you can do so using the following command:
 
-```css
+```bash
 ssh-keygen -t rsa -b 2048
 ```
 This will generate the key pair in the ~/.ssh directory on your local machine.
@@ -19,7 +19,7 @@ This will generate the key pair in the ~/.ssh directory on your local machine.
 ### Copy Public Key to Server:
 After the installation is complete, you need to copy your local machine's public key to the server's authorized_keys file. Run the following command on your local machine:
 
-```javascript
+```bash
 ssh-copy-id -i ~/.ssh/id_rsa <username>@<server_ip>
 ```
 Replace <username> with your created username on the server, and <server_ip> with the server's IP address.
@@ -32,7 +32,7 @@ sudo nano /etc/ssh/sshd_config
 ```
 Make sure the following settings are set correctly:
 
-```yaml
+```perl
 PubkeyAuthentication yes
 PasswordAuthentication no
 ChallengeResponseAuthentication no
@@ -52,7 +52,7 @@ sudo service ssh restart
 ### Test RSA Key Authentication:
 Try logging in to the server using your RSA key:
 
-```javascript
+```bash
 ssh -i ~/.ssh/id_rsa <username>@<server_ip>
 ```
 If everything is set up correctly, you should be able to log in without using a password.
