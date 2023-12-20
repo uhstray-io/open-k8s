@@ -107,8 +107,6 @@ echo -e "##################----------------CNI Plugins and RUNC Installed.------
 # Download and setup kubeadm and kubelet
 echo -e "Setting up kubeadm and kubelet...\n"
 
-https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.28.0/crictl-v1.28.0-linux-amd64.tar.gz
-
 # Install crictl for kubeadm and CRI
 if [ -f $INSTALL_DIR/crictl-$CRICTL_VERSION-linux-$ARCH ]; then 
     echo -e "Proper crictl version already downloaded, skipping...\n" 
