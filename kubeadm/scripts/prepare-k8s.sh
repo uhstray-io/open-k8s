@@ -8,7 +8,7 @@ export K8S_RELEASE="$(curl -sSL https://dl.k8s.io/release/stable.txt)"
 
 # System Versions
 export CNI_PLUGINS_VERSION="v1.3.0"
-export CONTAINER_VERSION="1.7.8"
+export CONTAINER_VERSION="v1.7.8"
 export CRICTL_VERSION="v1.28.0" 
 export RUNC_VERSION="v1.1.10"
 export KREL_VERSION="v0.16.2"
@@ -49,8 +49,8 @@ KUBECTL_CHECK="$(echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check)"
 echo -e "$KUBECTL_CHECK\n"
 
 if [ "$KUBECTL_CHECK" = "kubectl: OK" ]; then 
-    echo -e "sha256sum check SUCCESSFUL...\n"
-else echo -e "sha256sum check FAILED... please verify your download URLs for kubectl\n" 
+    echo -e "SHA256SUM CHECK SUCCESSFUL...\n"
+else echo -e "SHA256SUM CHECK FAILED... please verify your download URLs for kubectl\n" 
     exit 1
 fi
 
@@ -67,7 +67,7 @@ sudo mkdir -p $INSTALL_DIR
 if [ -d ./containerd-${CONTAINER_VERSION}-linux-${ARCH} ]; then 
     echo -e "Target version of containerd already downloaded, skipping...\n" 
     sudo tar Cxzvf /usr/local containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz
-    else wget https://github.com/containerd/containerd/releases/download/v${CONTAINER_VERSION}/containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz | sudo tar Cxzvf /usr/local containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz
+    else wget https://github.com/containerd/containerd/releases/download/${CONTAINER_VERSION}/containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz | sudo tar Cxzvf /usr/local containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz
 fi
 
 # Setup containerd as a service
@@ -83,21 +83,24 @@ sudo systemctl enable --now containerd
 
 echo -e "##################----------------Containerd installed and enabled----------------##################\n\n"
 
+
+echo -e "##################----------------Installing RUNC and CNI Resources----------------##################\n\n"
 # Install runc
-if [ -d "$RUNC_DIR/runc" ]; then 
-    echo -e "RUNC already installed in $RUNC_DIR/runc\n" 
+if [ -d "${RUNC_DIR}/runc" ]; then 
+    echo -e "RUNC already installed in ${RUNC_DIR}/runc\n" 
 else 
     curl -L "https://github.com/opencontainers/runc/releases/download/${RUNC_VERSION}/run.${ARCH}"
-    sudo install -m 755 runc.$ARCH $RUNC_DIR/runc
+    sudo install -m 755 runc.$ARCH ${RUNC_DIR}/runc
 fi
 
 # Install CNI Plugins
 if [ -d "$CNI_DEST" ]; then 
     echo -e "Cleaning up existing CNI resources...\n"
     sudo rm -rf $CNI_DEST
-else 
-    sudo mkdir -p $CNI_DEST
+    
 fi
+
+sudo mkdir -p $CNI_DEST
 
 echo -e "Downloading and installing CNI Resources...\n"
 curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_PLUGINS_VERSION}/cni-plugins-linux-${ARCH}-${CNI_PLUGINS_VERSION}.tgz" | sudo tar -C $CNI_DEST -xz
@@ -106,6 +109,8 @@ echo -e "##################----------------CNI Plugins and RUNC Installed.------
 
 # Download and setup kubeadm and kubelet
 echo -e "Setting up kubeadm and kubelet...\n"
+
+https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.28.0/crictl-v1.28.0-linux-amd64.tar.gz
 
 # Install crictl for kubeadm and CRI
 if [ -f ${INSTALL_DIR}/crictl-$CRICTL_VERSION-linux-${ARCH} ]; then 
@@ -117,14 +122,14 @@ else
 
     curl -LO "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz.sha256"
 
-    CRICRTL_CHECK="$(echo "$(cat crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz.sha256)  crictl" | sha256sum --check)"
+    CRICTL_CHECK="$(echo "$(cat crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz.sha256)  crictl" | sha256sum --check)"
 
     echo -e "$CRICTL_CHECK\n"
 
-    if [ "$CRICTL_CHECK" = "kubectl: OK" ]; then 
-        echo -e "sha256sum check SUCCESSFUL...\n"
+    if [ "$CRICTL_CHECK" = "crictl: OK" ]; then 
+        echo -e "SHA256SUM CHECK SUCCESSFUL...\n"
         wget curl -L "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz" | sudo tar -C $INSTALL_DIR -xz
-    else echo -e "sha256sum check FAILED... please verify your download URLs for kubectl\n" 
+    else echo -e "SHA256SUM CHECK FAILED... please verify your download URLs for kubectl\n" 
         exit 1
     fi
 fi
@@ -135,9 +140,9 @@ sudo chmod +x {kubeadm,kubelet}
 
 curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${KREL_VERSION}/cmd/krel/templates/latest/kubelet/kubelet.service" | sed "s:/usr/bin:${INSTALL_DIR}:g" | sudo tee ${SERVICE_DIR}/kubelet.service
 
-if ! [-f $SERVICE_DIR/kubelet.service.d ]; then 
-    echo -e "Creating kubelet.service directory: $SERVICE_DIR/kubelet.service.d"
-    sudo mkdir -p $SERVICE_DIR/kubelet.service.d 
+if ! [ -f ${SERVICE_DIR}/kubelet.service.d ]; then 
+    echo -e "Creating kubelet.service directory: ${SERVICE_DIR}/kubelet.service.d"
+    sudo mkdir -p ${SERVICE_DIR}/kubelet.service.d 
 fi
 
 curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${KREL_VERSION}/cmd/krel/templates/latest/kubeadm/10-kubeadm.conf" | sed "s:/usr/bin:${INSTALL_DIR}:g" | sudo tee ${SERVICE_DIR}/kubelet.service.d/10-kubeadm.conf
