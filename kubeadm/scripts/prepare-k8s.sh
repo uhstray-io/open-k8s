@@ -124,16 +124,19 @@ if [ -d "${RUNC_DIR}/runc" ]; then
     echo -e "RUNC already installed in ${RUNC_DIR}/runc\n" 
 else 
     echo -e "Installing RUNC...\n"
-    if wget "https://github.com/opencontainers/runc/releases/download/${RUNC_VERSION}/runc.${ARCH}"; then
-        echo -e "RUNC downloaded successfully.\n"
-        if sudo install -m 755 "runc.$ARCH" "${RUNC_DIR}/runc"; then
-            echo -e "RUNC installed successfully.\n"
+    if [ -f "runc.$ARCH" ]; then
+        echo -e "RUNC already downloaded, skipping download...\n"
+    else
+        if wget "https://github.com/opencontainers/runc/releases/download/${RUNC_VERSION}/runc.${ARCH}"; then
+            echo -e "RUNC downloaded successfully.\n"
         else
-            echo -e "Failed to install RUNC. Please check permissions and try again.\n"
+            echo -e "Failed to download RUNC. Please check the URL and try again.\n"
             exit 1
         fi
+    if sudo install -m 755 "runc.$ARCH" "${RUNC_DIR}/runc"; then
+                echo -e "RUNC installed successfully.\n"
     else
-        echo -e "Failed to download RUNC. Please check the URL and try again.\n"
+        echo -e "Failed to install RUNC. Please check permissions and try again.\n"
         exit 1
     fi
 fi
