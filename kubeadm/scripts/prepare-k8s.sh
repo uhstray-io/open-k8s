@@ -41,8 +41,6 @@ if [ -d $KUBECTL_DIR ]; then
     rm -rf $KUBECTL_DIR
 fi
 
-mkdir -p $KUBECTL_DIR
-
 # If a local kubectl binary exists, remove it
 if [ -f ./kubectl ]; then 
     echo -e "Removing old kubectl downloads\n"
