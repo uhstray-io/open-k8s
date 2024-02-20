@@ -150,7 +150,8 @@ Download the container runtime `containerd` and extract it to the destination di
 ```bash
 DEST="/usr/local"
 CONTAINER_VERSION="v1.7.13"
-curl -L "https://github.com/containerd/containerd/releases/download/${CONTAINER_VERSION}/containerd-${CONTAINER_VERSION}-linux-amd64.tar.gz"
+curl -L "https://github.com/containerd/containerd/releases/download/${CONTAINER_VERSION}/containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz"
+
 sudo Cxzvf "$DEST" containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz
 ```
 
