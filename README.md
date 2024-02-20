@@ -15,9 +15,18 @@
     - [kubeadm: the command to bootstrap the cluster, kubelet: the component that runs on all of the machines in your cluster and does things like starting pods and containers](#kubeadm-the-command-to-bootstrap-the-cluster-kubelet-the-component-that-runs-on-all-of-the-machines-in-your-cluster-and-does-things-like-starting-pods-and-containers)
       - [Download and install the latest version of kubeadm and kubelet binaries](#download-and-install-the-latest-version-of-kubeadm-and-kubelet-binaries)
     - [kubectl: the command line util to talk to your cluster.](#kubectl-the-command-line-util-to-talk-to-your-cluster)
+      - [Triaging issues with kuebctl](#triaging-issues-with-kuebctl)
   - [Creating High Availability Kubernetes Cluster on a Stack Control Plane](#creating-high-availability-kubernetes-cluster-on-a-stack-control-plane)
     - [Setup HA Load Balancer using keepalived and HAProxy](#setup-ha-load-balancer-using-keepalived-and-haproxy)
+    - [Prepare the Loadbalancer and Reverse Proxy Resources](#prepare-the-loadbalancer-and-reverse-proxy-resources)
+      - [Download the open-k8s repository](#download-the-open-k8s-repository)
+      - [Prepare keepalived](#prepare-keepalived)
+      - [Prepare HAProxy](#prepare-haproxy)
+    - [Test the Load Balancer and Reverse Proxy Resources](#test-the-load-balancer-and-reverse-proxy-resources)
+    - [Prepare the Backup Control Plane Node(s)](#prepare-the-backup-control-plane-nodes)
     - [Control-Plane Node Initialization](#control-plane-node-initialization)
+      - [Errors and Common Ways to Triage Kubeadm, Kubectl, and Control Plane Initialization](#errors-and-common-ways-to-triage-kubeadm-kubectl-and-control-plane-initialization)
+        - [Networking Errors](#networking-errors)
       - [Considerations about certifications, apiserver-advertise-addres, and ControlPlaneEndpoint](#considerations-about-certifications-apiserver-advertise-addres-and-controlplaneendpoint)
     - [CNI Networking Setup](#cni-networking-setup)
       - [Using Cilium for Cluster Networking](#using-cilium-for-cluster-networking)
@@ -274,11 +283,40 @@ Check the client version and cluster response
 kubectl version --client --output=yaml #client version
 kubectl cluster-info #cluster response
 ```
+*NOTE:* Cluster info will throw an error if the cluster is not yet initialized.
 
 Enable and start kubelet
 ```bash
 sudo systemctl enable --now kubelet
 ```
+
+
+
+#### Triaging issues with kuebctl
+If you're having any issues with kubectl these commands can help you troubleshoot:
+
+Show all pods in the kube-system namespace
+```bash
+kubectl get pod -n kube-system -w
+```
+
+Check the logs of the kubelet service
+```bash
+journalctl -u kubelet
+```
+
+Check the configuration of the kubelet service
+```bash
+systemctl cat kubelet
+# OR
+kubectl config view --raw > ~/.kube/config
+```
+
+Set the KUBECONFIG environment variable to point to the kubeconfig file
+```bash
+sudo kubectl proxy --kubeconfig ~/.kube/config --port 80
+```
+
 
 ---
 
@@ -297,10 +335,87 @@ These files were built using these examples:
 - [Example Keepalived Configurations](https://github.com/acassen/keepalived/tree/master/doc/samples)
 - [kubeadm HA Docs](https://github.com/kubernetes/kubeadm/blob/main/docs/ha-considerations.md#bootstrap-the-cluster)
 
-Test the node connection using
+### Prepare the Loadbalancer and Reverse Proxy Resources
+
+#### Download the open-k8s repository
+Clone the repo
+```bash
+git clone https://github.com/uhstray-io/open-k8s.git
+```
+
+Navigate to the open-k8s directory to update the configurations
+```bash
+cd dir/open-k8s/kubeadm
+```
+
+#### Prepare keepalived 
+Install keepalived on the control-plane node
+```bash
+sudo apt install keepalived
+
+```
+
+Navigate to the directory and update the configurations
+```bash
+nano control_master/config/keepalived.conf
+```
+These are the key variables to update in the keepalived.conf file:
+```yaml
+#/keepalived.conf
+UPDATE: my.dns.name
+UPDATEPASS: YOUR_OWN_PASSWORD
+```
+
+Copy the control_master directory to the appropriate location on the control-plane node.
+```bash
+sudo cp control_master/config/keepalived.conf /etc/keepalived/keepalived.conf
+sudo cp control_master/check_apiserver.sh /etc/keepalived/check_apiserver.sh
+```
+
+Restart the keepalived service
+```bash
+sudo systemctl restart keepalived
+```
+
+#### Prepare HAProxy 
+```bash
+sudo apt install haproxy
+```
+
+Update the haproxy.cfg file
+```bash
+nano control_master/config/haproxy.cfg
+```
+For each control-plane node, add a server line to the haproxy.cfg file. The server line should look like this:
+```yaml
+#/haproxy.cfg
+server server_name_1 192.168.x.xxx:6443 check
+```
+
+Copy the control_master directory to the appropriate location on the control-plane node.
+```bash
+sudo cp control_master/config/haproxy.cfg /etc/haproxy/haproxy.cfg
+```
+
+Restart the haproxy service
+```bash
+sudo systemctl restart haproxy
+```
+
+### Test the Load Balancer and Reverse Proxy Resources
+
+Test the node connection using, where my.dns.name is the DNS name of the load balancer:
+*Note:* A connection refused error is expected because the API server is not yet running. A timeout, however, indicates a problem with the load balancer or the control-plane nodes.
+
 ```bash
 nc -v my.dns.name 6443
 ```
+
+### Prepare the Backup Control Plane Node(s)
+
+Repeat the process for each control-plane node updating the check_apiserver.sh and keepalived.conf. The haproxy.cfg file should be updated with the server lines for each control-plane node on the primary control-plane node.
+
+Your high-availability control-plane is now set up. You can now initialize the control-plane node.
 
 ---
 
@@ -339,6 +454,22 @@ Test your kubectl with to see if the cluster responds:
 kubectl get pod -n kube-system -w
 ```
 
+#### Errors and Common Ways to Triage Kubeadm, Kubectl, and Control Plane Initialization
+
+##### Networking Errors
+If you encounter the following networking errors, you can use the following commands to fix them:
+
+- 1. IPTables and Forwarding Issues: https://github.com/kubernetes/kubeadm/issues/1062
+```bash
+[ERROR FileContent--proc-sys-net-bridge-bridge-nf-call-iptables]: /proc/sys/net/bridge/bridge-nf-call-iptables does not exist
+[ERROR FileContent--proc-sys-net-ipv4-ip_forward]: /proc/sys/net/ipv4/ip_forward contents are not set to 1
+```
+
+To fix these errors, run the following commands on the control-plane node:
+```bash
+sudo modprobe br_netfilter
+sudo echo '1' > /proc/sys/net/ipv4/ip_forward
+```
 #### Considerations about certifications, apiserver-advertise-addres, and ControlPlaneEndpoint
 
 - `--apiserver-advertise-address` can be used to set the advertise address for this particular control-plane node's API server
