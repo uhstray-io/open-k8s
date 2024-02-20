@@ -124,7 +124,7 @@ sudo bash ${SELECTED_SCRIPT}.sh
 #### CNI Plugins: networking plugins used by Kubernetes.
 - Install CNI plugins from [here](https://github.com/containernetworking/plugins/releases). Use the script provided to download and extract the CNI plugins to the appropriate directory.
 ```bash
-CNI_PLUGINS_VERSION="v1.3.0"
+CNI_PLUGINS_VERSION="v1.4.0"
 ARCH="amd64"
 DEST="/opt/cni/bin"
 sudo mkdir -p "$DEST"
@@ -149,7 +149,8 @@ sudo mkdir -p "$DOWNLOAD_DIR"
 Download the container runtime `containerd` and extract it to the destination directory
 ```bash
 DEST="/usr/local"
-curl -L "https://github.com/containerd/containerd/releases/download/v2.0.0-beta.0/containerd-2.0.0-beta.0-linux-amd64.tar.gz" | sudo tar -C "$DEST" -xzvf
+CONTAINER_VERSION="v1.7.13"
+curl -L "https://github.com/containerd/containerd/releases/download/${CONTAINER_VERSION}/containerd-${CONTAINER_VERSION}-linux-amd64.tar.gz" | sudo tar -C "$DEST" -xzvf
 ```
 
 *Note:* Starting with v1.22 and later, when creating a cluster with kubeadm, if the user does not set the cgroupDriver field under KubeletConfiguration, kubeadm defaults it to systemd.
@@ -170,7 +171,7 @@ cgroupDriver: systemd
 #### Install critcl for kubeadmin and CRI
 - Install critcl using the provided script to aid with kubeadmin and CRI.
 ```bash
-CRICTL_VERSION="v1.28.0"
+CRICTL_VERSION="v1.29.0"
 ARCH="amd64"
 curl -L "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz" | sudo tar -C $DOWNLOAD_DIR -xz
 ```
@@ -184,7 +185,7 @@ Download the latest version of kubeadm and kubelet binaries
 ```bash
 K8S_RELEASE="$(curl -sSL https://dl.k8s.io/release/stable.txt)"
 ARCH="amd64"
-RELEASE_VERSION="v0.16.2"
+RELEASE_VERSION="v0.16.5"
 
 cd $DOWNLOAD_DIR
 sudo chmod +x {kubeadm,kubelet}
