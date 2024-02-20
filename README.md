@@ -1,3 +1,4 @@
+- [Reference Architecture Diagram](#reference-architecture-diagram)
 - [Deploy High Availability Kubernetes Cluster Using Kubeadm on a Stack Control Plane](#deploy-high-availability-kubernetes-cluster-using-kubeadm-on-a-stack-control-plane)
   - [Official Documentation](#official-documentation)
   - [Machine Preparation](#machine-preparation)
@@ -6,9 +7,13 @@
     - [Essential Installations](#essential-installations)
       - [CNI Plugins: networking plugins used by Kubernetes.](#cni-plugins-networking-plugins-used-by-kubernetes)
       - [Setup Container Runtime Environments Kubernetes using containerd...](#setup-container-runtime-environments-kubernetes-using-containerd)
+      - [Other containerd dependencies](#other-containerd-dependencies)
+        - [Download RUNC](#download-runc)
+        - [Setup containerd CNI plugin using \[CNI Networking Setup\](### CNI Networking Setup)](#setup-containerd-cni-plugin-using-cni-networking-setup-cni-networking-setup)
       - [Configure systemd as the cgroup driver for containerd](#configure-systemd-as-the-cgroup-driver-for-containerd)
       - [Install critcl for kubeadmin and CRI](#install-critcl-for-kubeadmin-and-cri)
     - [kubeadm: the command to bootstrap the cluster, kubelet: the component that runs on all of the machines in your cluster and does things like starting pods and containers](#kubeadm-the-command-to-bootstrap-the-cluster-kubelet-the-component-that-runs-on-all-of-the-machines-in-your-cluster-and-does-things-like-starting-pods-and-containers)
+      - [Download and install the latest version of kubeadm and kubelet binaries](#download-and-install-the-latest-version-of-kubeadm-and-kubelet-binaries)
     - [kubectl: the command line util to talk to your cluster.](#kubectl-the-command-line-util-to-talk-to-your-cluster)
   - [Creating High Availability Kubernetes Cluster on a Stack Control Plane](#creating-high-availability-kubernetes-cluster-on-a-stack-control-plane)
     - [Setup HA Load Balancer using keepalived and HAProxy](#setup-ha-load-balancer-using-keepalived-and-haproxy)
@@ -19,9 +24,9 @@
         - [Understanding Cilium components](#understanding-cilium-components)
       - [Network Design Considerations](#network-design-considerations)
     - [Adding nodes to the cluster](#adding-nodes-to-the-cluster)
-    - [(Optional) Proxying API Server to localhost](#optional-proxying-api-server-to-localhost)
-    - [Using Cilium and crictl as a command line tool](#using-cilium-and-crictl-as-a-command-line-tool)
-    - [Configuring GPU Scheduling](#configuring-gpu-scheduling)
+  - [(Optional) Proxying API Server to localhost](#optional-proxying-api-server-to-localhost)
+  - [Using Cilium and crictl as a command line tool](#using-cilium-and-crictl-as-a-command-line-tool)
+  - [Configuring GPU Scheduling](#configuring-gpu-scheduling)
    
 ---
 
@@ -89,7 +94,7 @@ CNI_PLUGINS_VERSION="v1.4.0"
 CONTAINER_VERSION="1.7.13"
 CRICTL_VERSION="v1.29.0" 
 RUNC_VERSION="v1.1.12"
-KREL_VERSION="v0.16.5"
+RELEASE_VERSION="v0.16.5"
 
 # Directories
 CNI_DEST="/opt/cni/bin"
@@ -143,8 +148,10 @@ sudo mkdir -p "$DOWNLOAD_DIR"
 - Configure systemd as the cgroup driver for containerd.
 - (Optional) Implement your own [containerd client](https://github.com/containerd/containerd/blob/main/docs/getting-started.md#implementing-your-own-containerd-client)
 
-  Runtime	Path to Unix domain socket:
+  Runtime	Path to Unix/Linux domain socket:
   * `containerd` |	`unix:///var/run/containerd/containerd.sock`
+  Runtime Path to Windows domain socket:
+  * `containerd` |	`npipe:////./pipe/containerd-containerd`
 
 Download the container runtime `containerd` and extract it to the destination directory
 ```bash
@@ -154,47 +161,59 @@ curl -L "https://github.com/containerd/containerd/releases/download/${CONTAINER_
 
 sudo Cxzvf "$DEST" containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz
 
+```
+
+Download the `containerd` service file and place it in the appropriate directory
+```bash
+
 sudo mkdir -p /usr/local/lib/systemd/system/
 
 sudo curl -L https://raw.githubusercontent.com/containerd/containerd/main/containerd.service -o /usr/local/lib/systemd/system/containerd.service
+```
+
+Enable and start `containerd` using `systemctl` commands to enable and start the service.
+```bash
 
 sudo systemctl daemon-reload
 
 sudo systemctl enable --now containerd
 ```
+
 #### Other containerd dependencies
 ##### Download RUNC
 
+- Download and extract `runc` using the bash commands below.
+- RUNC Release URL: https://github.com/opencontainers/runc/releases
+  
+```bash
+RUNC_VERSION="v1.1.12"
+curl -LO "https://github.com/opencontainers/runc/releases/download/${RUNC_VERSION}/runc.${ARCH}"
+sudo install -m 755 runc.${ARCH} /usr/local/sbin/runc
+```
+
+##### Setup containerd CNI plugin using [CNI Networking Setup](### CNI Networking Setup)
+
+
 *Note:* Starting with v1.22 and later, when creating a cluster with kubeadm, if the user does not set the cgroupDriver field under KubeletConfiguration, kubeadm defaults it to systemd.
 
-#### Configure systemd as the cgroup driver for [containerd](https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd)
-
-*Note: Need better research and understanding on these sections*
-```yaml
-containerd
-This section outlines the necessary steps to use containerd as CRI runtime.
 
 To install containerd on your system, follow the instructions on getting started with containerd. Return to this step once you've created a valid config.toml configuration file.
 
-Linux
-Windows
-You can find this file under the path /etc/containerd/config.toml.
+#### Configure systemd as the cgroup driver for [containerd](https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd)
 
-On Linux the default CRI socket for containerd is /run/containerd/containerd.sock. On Windows the default CRI endpoint is npipe://./pipe/containerd-containerd.
+- You can find this file under the path /etc/containerd/config.toml.
+- On Linux the default CRI socket for containerd is /run/containerd/containerd.sock
+- The default cgroup driver for containerd is cgroupfs. To use systemd as the cgroup driver, you need to set the SystemdCgroup option to true in the containerd configuration file.
 
-Configuring the systemd cgroup driver
-To use the systemd cgroup driver in /etc/containerd/config.toml with runc, set
-
+```bash
+#/etc/containerd/config.toml
 [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
   ...
   [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
     SystemdCgroup = true
 ```
 
-- You can find this file under the path /etc/containerd/config.toml.
-- On Linux the default CRI socket for containerd is /run/containerd/containerd.sock
-
-```bash
+```yaml
 #Example Syntax for containerd
 apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
@@ -206,7 +225,7 @@ cgroupDriver: systemd
 - Install critcl using the provided script to aid with kubeadmin and CRI.
 ```bash
 CRICTL_VERSION="v1.29.0"
-ARCH="amd64"
+
 curl -L "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz" | sudo tar -C $DOWNLOAD_DIR -xz
 ```
 
@@ -214,16 +233,21 @@ curl -L "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL
 
 ### kubeadm: the command to bootstrap the cluster, kubelet: the component that runs on all of the machines in your cluster and does things like starting pods and containers
 
-Download the latest version of kubeadm and kubelet binaries
+#### Download and install the latest version of kubeadm and kubelet binaries
 
+Set the pre-requisites for the kubeadm and kubelet
 ```bash
 K8S_RELEASE="$(curl -sSL https://dl.k8s.io/release/stable.txt)"
-ARCH="amd64"
+
 RELEASE_VERSION="v0.16.5"
 
 cd $DOWNLOAD_DIR
 sudo chmod +x {kubeadm,kubelet}
 sudo mkdir -p /etc/systemd/system/kubelet.service.d
+```
+
+Install the kubeadm and kubelet binaries
+```bash
 
 sudo curl -L --remote-name-all https://dl.k8s.io/release/${K8S_RELEASE}/bin/linux/${ARCH}/{kubeadm,kubelet}
 sudo curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSION}/cmd/krel/templates/latest/kubelet/kubelet.service" | sed "s:/usr/bin:${DOWNLOAD_DIR}:g" | sudo tee /etc/systemd/system/kubelet.service
