@@ -7,11 +7,11 @@ export ARCH="amd64"
 export K8S_RELEASE="$(curl -sSL https://dl.k8s.io/release/stable.txt)"
 
 # System Versions
-export CNI_PLUGINS_VERSION="v1.3.0"
-export CONTAINER_VERSION="v1.7.8"
-export CRICTL_VERSION="v1.28.0" 
-export RUNC_VERSION="v1.1.10"
-export KREL_VERSION="v0.16.2"
+export CNI_PLUGINS_VERSION="v1.4.0"
+export CONTAINER_VERSION="v1.7.13"
+export CRICTL_VERSION="v1.29.0" 
+export RUNC_VERSION="v1.1.12"
+export KREL_VERSION="v0.16.5"
 
 # Directories
 export CNI_DEST="/opt/cni/bin"
