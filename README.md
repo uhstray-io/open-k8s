@@ -153,11 +153,43 @@ CONTAINER_VERSION="v1.7.13"
 curl -L "https://github.com/containerd/containerd/releases/download/${CONTAINER_VERSION}/containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz"
 
 sudo Cxzvf "$DEST" containerd-${CONTAINER_VERSION}-linux-${ARCH}.tar.gz
+
+sudo mkdir -p /usr/local/lib/systemd/system/
+
+sudo curl -L https://raw.githubusercontent.com/containerd/containerd/main/containerd.service -o /usr/local/lib/systemd/system/containerd.service
+
+sudo systemctl daemon-reload
+
+sudo systemctl enable --now containerd
 ```
+#### Other containerd dependencies
+##### Download RUNC
 
 *Note:* Starting with v1.22 and later, when creating a cluster with kubeadm, if the user does not set the cgroupDriver field under KubeletConfiguration, kubeadm defaults it to systemd.
 
 #### Configure systemd as the cgroup driver for [containerd](https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd)
+
+*Note: Need better research and understanding on these sections*
+```yaml
+containerd
+This section outlines the necessary steps to use containerd as CRI runtime.
+
+To install containerd on your system, follow the instructions on getting started with containerd. Return to this step once you've created a valid config.toml configuration file.
+
+Linux
+Windows
+You can find this file under the path /etc/containerd/config.toml.
+
+On Linux the default CRI socket for containerd is /run/containerd/containerd.sock. On Windows the default CRI endpoint is npipe://./pipe/containerd-containerd.
+
+Configuring the systemd cgroup driver
+To use the systemd cgroup driver in /etc/containerd/config.toml with runc, set
+
+[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+  ...
+  [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+    SystemdCgroup = true
+```
 
 - You can find this file under the path /etc/containerd/config.toml.
 - On Linux the default CRI socket for containerd is /run/containerd/containerd.sock
