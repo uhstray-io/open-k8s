@@ -85,11 +85,11 @@ ARCH="amd64"
 K8S_RELEASE="$(curl -sSL https://dl.k8s.io/release/stable.txt)"
 
 # System Versions
-CNI_PLUGINS_VERSION="v1.3.0"
-CONTAINER_VERSION="1.7.8"
-CRICTL_VERSION="v1.28.0" 
-RUNC_VERSION="v1.1.10"
-KREL_VERSION="v0.16.2"
+CNI_PLUGINS_VERSION="v1.4.0"
+CONTAINER_VERSION="1.7.13"
+CRICTL_VERSION="v1.29.0" 
+RUNC_VERSION="v1.1.12"
+KREL_VERSION="v0.16.5"
 
 # Directories
 CNI_DEST="/opt/cni/bin"
