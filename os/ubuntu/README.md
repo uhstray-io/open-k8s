@@ -16,7 +16,7 @@ ssh-keygen -t rsa -b 2048
 ```
 This will generate the key pair in the ~/.ssh directory on your local machine.
 
-### Copy Public Key to Server:
+### Copy Private Key to Server:
 After the installation is complete, you need to copy your local machine's public key to the server's authorized_keys file. Run the following command on your local machine:
 
 ```bash
@@ -56,6 +56,16 @@ Try logging in to the server using your RSA key:
 ssh -i ~/.ssh/id_rsa <username>@<server_ip>
 ```
 If everything is set up correctly, you should be able to log in without using a password.
+
+### Disallow external traffic to access SSH port:
+
+Assign the `LOCAL_NETWORK` variable to your local network IP range. This will allow only local network traffic to access the SSH port.
+
+```bash
+LOCAL_NETWORK="192.168.1.0/24"
+
+sudo ufw allow from $LOCAL_NETWORK proto tcp to any port 22  # SSH
+```
 
 ### Disable Root Login:
 For better security, you might want to disable direct root login via SSH. Edit the SSH configuration file again and change:
