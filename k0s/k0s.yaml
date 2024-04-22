@@ -20,21 +20,21 @@ spec:
       - name: bitnami
         url: https://charts.bitnami.com/bitnami
       charts:
-    - name: traefik
-      chartname: traefik/traefik
-      version: "20.5.3"
-      namespace: default
-    - name: metallb
-      chartname: bitnami/metallb
-      version: "2.5.4"
-      namespace: default
-      values: |
-        configInline:
-          address-pools:
-          - name: generic-cluster-pool
-            protocol: layer2
-            addresses:
-            - 192.168.1.35-192.168.1.38
+      - name: traefik
+        chartname: traefik/traefik
+        version: "20.5.3"
+        namespace: default
+      - name: metallb
+        chartname: bitnami/metallb
+        version: "2.5.4"
+        namespace: default
+        values: |
+          configInline:
+            address-pools:
+            - name: generic-cluster-pool
+              protocol: layer2
+              addresses:
+              - 192.168.1.35-192.168.1.38
     storage:
       create_default_storage_class: false
       type: external_storage

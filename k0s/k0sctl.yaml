@@ -5,29 +5,41 @@ metadata:
 spec:
   hosts:
   - ssh:
-      address: 192.168.1.100
-      user: uhstray
+      address: 192.168.1.51
+      user: user
       port: 22
-      keyPath: ~/OneDrive/Documents/GitHub/awx-operations/deployments/ubuntu/22.04/config/hoagsobject
+      keyPath: ~/path/to/key/file1
     role: controller+worker
   - ssh:
-      address: 192.168.1.102
-      user: uhstray
+      address: 192.168.1.52
+      user: user
       port: 22
-      keyPath: ~/OneDrive/Documents/GitHub/awx-operations/deployments/ubuntu/22.04/config/mercier77
+      keyPath: ~/path/to/key/file2
     role: controller+worker
   - ssh:
-      address: 192.168.1.101
-      user: uhstray
+      address: 192.168.1.53
+      user: user
       port: 22
-      keyPath: ~/OneDrive/Documents/GitHub/awx-operations/deployments/ubuntu/22.04/config/crabnebula
+      keyPath: ~/path/to/key/file3
+    role: controller+worker
+  - ssh:
+      address: 192.168.1.54
+      user: user
+      port: 22
+      keyPath: ~/path/to/key/file5
     role: worker
   - ssh:
-      address: 192.168.1.103
-      user: uhstray
+      address: 192.168.1.55
+      user: user
       port: 22
-      keyPath: ~/OneDrive/Documents/GitHub/awx-operations/deployments/ubuntu/22.04/config/ngc7764a
-    role: worker
+      keyPath: ~/path/to/key/file5
+    role: controller
+  - ssh:
+      address: 192.168.1.56
+      user: user
+      port: 22
+      keyPath: ~/path/to/key/file6
+    role: controller
   k0s:
     version: null
     versionChannel: stable

@@ -290,8 +290,6 @@ Enable and start kubelet
 sudo systemctl enable --now kubelet
 ```
 
-
-
 #### Triaging issues with kuebctl
 If you're having any issues with kubectl these commands can help you troubleshoot:
 
