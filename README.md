@@ -15,9 +15,9 @@ Long term goals of the project including codifying best practices, architecture,
 
 ## Deployment Options
 
-[./k0s](./k0s) - Deploy a cluster using k0s as the underlying framework
-[./kubeadm](./kubeadm) - Deploy a cluster using kubeadm as the underlying framework
-[./microk8s](./microk8s) - Deploy a cluster using microk8s as the underlying framework
+1. [./k0s](./k0s) - Deploy a cluster using k0s as the underlying framework
+2. [./kubeadm](./kubeadm) - Deploy a cluster using kubeadm as the underlying framework
+3. [./microk8s](./microk8s) - Deploy a cluster using microk8s as the underlying framework
 
 ## Contributing
 
