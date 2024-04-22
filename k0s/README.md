@@ -156,8 +156,8 @@ user ALL=(ALL) NOPASSWD: ALL
 Add the user to the sudoers group:
 
 ```bash
-sudo usermod -aG sudo user
-sudo usermod -aG uberpw user
+sudo usermod -aG sudo <user>
+sudo usermod -aG uberpw <user>
 ```
 
 ### Create a k0sctl configuration file and initialize the cluster
