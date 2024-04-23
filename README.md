@@ -13,6 +13,14 @@ The project is based on the following technologies:
 
 Long term goals of the project including codifying best practices, architecture, and security configurations into GO as a common programming language to deploy the clusters maintained in this project.
 
+## Server Hardware Reference Architecture Diagram
+
+![Testing Hardware Reference Architecture](.images/kube-one.svg)
+
+## GOpen-k8s Platform Design Architecture
+
+![Software Design Architecture](.images/gopenk8s.svg)
+
 ## Deployment Options
 
 1. [./k0s](./k0s) - Deploy a cluster using k0s as the underlying framework

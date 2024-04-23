@@ -1,4 +1,3 @@
-- [Reference Architecture Diagram](#reference-architecture-diagram)
 - [Deploy High Availability Kubernetes Cluster Using Kubeadm on a Stack Control Plane](#deploy-high-availability-kubernetes-cluster-using-kubeadm-on-a-stack-control-plane)
   - [Official Documentation](#official-documentation)
   - [Machine Preparation](#machine-preparation)
@@ -38,10 +37,6 @@
   - [Configuring GPU Scheduling](#configuring-gpu-scheduling)
    
 ---
-
-# Reference Architecture Diagram
-
-![Reference Architecture](kube-one.svg)
       
 # Deploy High Availability Kubernetes Cluster Using Kubeadm on a Stack Control Plane
 ## Official Documentation
