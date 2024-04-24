@@ -42,6 +42,10 @@ Check the lower SSH_Config directories to makes sure PasswordAuthentication is d
 ```bash
 cd /etc/ssh/sshd_config.d/
 sudo nano <config_file_name>
+
+or 
+
+sudo nano /etc/ssh/sshd_config.d/<config_file_name>
 ```
 
 Save the changes and restart the SSH service:
