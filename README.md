@@ -6,6 +6,8 @@ The goal is to allow users to deploy a high-availability kubernetes cluster with
 
 The current project MVP will allow developers to be able to acccess the kubernetes dashboard and deploy applications to the cluster.
 
+![openk8s MVP Design and Future State Concept](.images/openk8s_concept.svg)
+
 The project is based on the following technologies:
 - [k0s](https://k0sproject.io/): A zero-friction Kubernetes distribution.
 - [kubeadm](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/): A tool to deploy production-ready kubernetes clusters.
