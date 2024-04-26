@@ -23,6 +23,10 @@ Long term goals of the project including codifying best practices, architecture,
 
 ![Software Design Architecture](.images/gopenk8s.svg)
 
+## DevSecOps Design Principles
+
+![DevSecOps Design Principles](.images/devsecops-design.png)
+
 ## Deployment Options
 
 1. [./k0s](./k0s) - Deploy a cluster using k0s as the underlying framework
