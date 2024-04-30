@@ -1,0 +1,38 @@
+cluster_name: testcluster
+machines:
+    - machine_name: testmachine
+      machine_type: ""
+      osconfig:
+        hostname: testhostname
+        username: testuser
+        password: testpassword
+      sshconfig:
+        ipaddress: 192.168.1.100
+        port: 0
+        sshkey: '----------'
+        liststring:
+            - string1
+            - string2
+      listofcommands:
+        - cwd: "~"
+          command: ls -la
+        - cwd: ~.ssh/
+          command: ls -la
+    - machine_name: testmachine2
+      machine_type: ""
+      osconfig:
+        hostname: testhostname
+        username: testuser
+        password: testpassword
+      sshconfig:
+        ipaddress: 192.168.1.101
+        port: 0
+        sshkey: '----------'
+        liststring:
+            - string1
+            - string2
+            - string2
+            - string2
+      listofcommands:
+        - cwd: "~"
+          command: ls -la
