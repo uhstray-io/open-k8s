@@ -13,6 +13,12 @@ The project is based on the following technologies:
 - [kubeadm](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/): A tool to deploy production-ready kubernetes clusters.
 - [microk8s](https://microk8s.io/): A lightweight kubernetes distribution.
 
+## Deployment Options
+
+1. [./k0s](./k0s) - Deploy a cluster using k0s as the underlying framework
+2. [./kubeadm](./kubeadm) - Deploy a cluster using kubeadm as the underlying framework
+3. [./microk8s](./microk8s) - Deploy a cluster using microk8s as the underlying framework
+
 Long term goals of the project including codifying best practices, architecture, and security configurations into GO as a common programming language to deploy the clusters maintained in this project.
 
 ## Server Hardware Reference Architecture Diagram
@@ -26,12 +32,6 @@ Long term goals of the project including codifying best practices, architecture,
 ## DevSecOps Design Principles
 
 ![DevSecOps Design Principles](.images/devsecops-design.png)
-
-## Deployment Options
-
-1. [./k0s](./k0s) - Deploy a cluster using k0s as the underlying framework
-2. [./kubeadm](./kubeadm) - Deploy a cluster using kubeadm as the underlying framework
-3. [./microk8s](./microk8s) - Deploy a cluster using microk8s as the underlying framework
 
 ## Contributing
 
