@@ -426,6 +426,29 @@ k0sctl kubeconfig --config path/to/k0sctl.yaml > k0s.config
 kubectl get node --kubeconfig k0s.config
 ```
 
+Add the configuration to your .kube/config file:
+```bash
+export KUBECONFIG=deployments/k0s/kubeconfig
+cp $KUBECONFIG ~/.kube/config
+```
+
+Merge your config file if you have an existing .kube/config:
+```bash
+export KUBECONFIG=deployments/k0s/kubeconfig
+function kubeconfig_merge() {
+  if [ $# -eq 0 ]
+   then
+     echo "Please pass the location of the kubeconfig you wish to merge"
+  fi
+  KUBECONFIG=~/.kube/config:$1 kubectl config view --flatten > ~/.kube/mergedkub && mv ~/.kube/mergedkub ~/.kube/config
+}
+```
+
+Test the connection to your cluster
+```bash
+kubectl get pods --all-namespaces
+```
+
 Edit the k0s config
 ```bash
 k0s config edit
