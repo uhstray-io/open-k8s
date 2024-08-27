@@ -12,7 +12,7 @@ sudo apt install openssh-server
 If you haven't generated an RSA key pair on your local machine, you can do so using the following command:
 
 ```bash
-ssh-keygen -t rsa -b 2048
+ssh-keygen -t ed25519
 ```
 This will generate the key pair in the ~/.ssh directory on your local machine.
 
