@@ -26,7 +26,7 @@ ssh-copy-id -i ~/.ssh/id_rsa <username>@<server_ip>
 Copy an SSH Key to your server after you've locked down the server to only allow key-based authentication.
 
 ```bash
-ssh-copy-id -i ~/.ssh/id_rsa -o 'IdentityFile ~/.ssh/<your-already-existing-id>' <username>@<server_ip>
+ssh-copy-id -f -i ~/.ssh/id_rsa -o 'IdentityFile ~/.ssh/<your-already-existing-id>' <username>@<server_ip>
 ```
 
 Replace <username> with your created username on the server, and <server_ip> with the server's IP address.
