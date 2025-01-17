@@ -13,6 +13,11 @@ The project is based on the following technologies:
 - [kubeadm](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/): A tool to deploy production-ready kubernetes clusters.
 - [microk8s](https://microk8s.io/): A lightweight kubernetes distribution.
 
+## Contributing Guidelines
+
+- [Review our Code of Conduct](https://www.uhstray.io/en/code-of-conduct)
+- [Check our CONTRIBUTING.MD](./CONTRIBUTING.md)
+
 ## Deployment Options
 
 1. [./k0s](./k0s) - Deploy a cluster using k0s as the underlying framework
